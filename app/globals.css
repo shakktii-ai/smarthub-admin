@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; background: #F1F5F9; color: #0B1220; }
+:focus-visible { outline: 2px solid #FF9F1C; outline-offset: 2px; }
