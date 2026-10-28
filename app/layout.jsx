@@ -20,7 +20,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata = {
-  title: "SmartHub Pay — Payments, Collections & Growth",
+  title: "SmartHub Pay — Smart Payments.Seamless Growth.",
   description:
     "SmartHub Pay helps Indian merchants accept UPI, card and QR payments with POS devices, merchant onboarding and collection solutions.",
   icons: {
