@@ -23,8 +23,13 @@ export const metadata = {
   title: "SmartHub Pay — Payments, Collections & Growth",
   description:
     "SmartHub Pay helps Indian merchants accept UPI, card and QR payments with POS devices, merchant onboarding and collection solutions.",
-  openGraph: {
-    title: "SmartHub Pay — Payments, Collections & Growth",
+  icons: {
+    icon: "/smarthubpay.jpeg",
+    shortcut: "/smarthubpay.jpeg",
+    apple: "/smarthubpay.jpeg",
+  },
+    openGraph: {
+    title: "SmartHub Pay — Smart Payments.Seamless Growth.",
     description:
       "POS, QR, lending, merchant onboarding, UPI and collections for Indian businesses.",
   },
