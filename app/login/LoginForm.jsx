@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useFormState, useFormStatus } from 'react-dom';
+import { useRouter } from "next/navigation";
 import {
   Eye,
   EyeOff,
@@ -15,6 +16,7 @@ import {
   Landmark,
   Smartphone,
   Users,
+  StepBack,
 } from 'lucide-react';
 
 import { Field, inputCls } from '@/components/ui';
@@ -103,7 +105,7 @@ export default function LoginForm({ notice }) {
   const [show, setShow] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
-
+ const router = useRouter();
   const error = state?.error || notice;
 
   const forgot = async () => {
@@ -127,7 +129,20 @@ export default function LoginForm({ notice }) {
 
   return (
     <main className="min-h-screen bg-[#eff4fb] ">
-      {/* Left branding panel */}
+<button
+  type="button"
+  onClick={() => {
+    window.location.href = "/";
+  }}
+  aria-label="Back to home"
+  className="group absolute left-6 top-6 z-50 flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white/90 text-[#102c55] shadow-sm backdrop-blur-sm transition-all duration-200 hover:-translate-x-0.5 hover:border-blue-200 hover:bg-blue-50 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-100 sm:left-8 sm:top-8"
+>
+  <StepBack
+    size={20}
+    strokeWidth={1.8}
+    className="transition-transform duration-200 group-hover:-translate-x-0.5"
+  />
+</button>   {/* Left branding panel */}
       {/* <section className="relative hidden min-h-screen flex-col justify-between overflow-hidden bg-[#0c2342] px-12 py-10 text-white lg:flex xl:px-16">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_20%,rgba(30,100,190,0.35),transparent_55%)]" />
 
@@ -200,9 +215,15 @@ export default function LoginForm({ notice }) {
             </div>
 
             <div>
-              <p className="font-extrabold tracking-tight text-[#102c55]">
-                SMARTHUB PAY
-              </p>
+               <span className="text-xl font-extrabold tracking-tight">
+            <span className="bg-gradient-to-r from-[#0878D1] to-[#0BA8F5] bg-clip-text text-transparent">
+              SMART
+            </span>
+            <span className="text-[#20242D]">HUB</span>{" "}
+            <span className="bg-gradient-to-r from-[#0878D1] to-[#0BA8F5] bg-clip-text text-transparent">
+              PAY
+            </span>
+          </span>
               <p className="text-sm text-slate-600">Secure Operations Portal</p>
             </div>
           </div>
@@ -325,7 +346,7 @@ export default function LoginForm({ notice }) {
           </form>
 
           <p className="mt-5 text-center text-xs leading-5 text-slate-500">
-            © {new Date().getFullYear()} SmartHub Pay. Authorised access only.
+            © {new Date().getFullYear()} SMARTHUB PAY FINTECH PRIVATE LIMITED.
           </p>
         </div>
       </section>
