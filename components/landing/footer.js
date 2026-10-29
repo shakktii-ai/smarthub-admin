@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import {
   ArrowRight,
@@ -39,8 +38,9 @@ function Footer() {
     {
       title: "Company",
       links: [
-        { label: "About Us", href: "#about" },
-    
+        { label: "About Us", href: "/landing/aboutUs" },
+        { label: "Terms", href: "/landing/termCondition" },
+        { label: "Privacy Policy", href: "/landing/privacyPolicy" },
       ],
     },
   ];
@@ -67,9 +67,9 @@ function Footer() {
 
       <div className="mx-auto max-w-[1440px] px-6 pb-6 pt-14 sm:px-8 sm:pt-16 lg:px-12 lg:pt-20">
         {/* Main footer grid */}
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-10 lg:gap-12">
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-12">
           {/* Brand */}
-          <div className="sm:col-span-2 lg:col-span-4">
+          <div className="sm:col-span-2 lg:col-span-3">
             <Link
               href="/"
               aria-label="SmartHub Pay homepage"
@@ -80,30 +80,17 @@ function Footer() {
                 alt="SmartHub Pay logo"
                 className="h-[70px] w-[70px] rounded-xl bg-white p-1 object-contain"
               />
-
-            
             </Link>
 
             <h3 className="mt-4 text-xl font-bold leading-8 sm:text-2xl">
-              Smart Payments.
-              <span className="ml-2 text-[#28c5e8]">
-                Seamless Growth.
-              </span>
+              Smart Payments.<br/>
+              <span className=" text-[#28c5e8] ">Seamless Growth.</span>
             </h3>
 
             <p className="mt-4 max-w-md text-sm leading-7 text-slate-300">
-              Payments, collections and growth for India's businesses — simple, secure and reliable.
+              Payments, collections and growth for India's businesses — simple,
+              secure and reliable.
             </p>
-
-            {/* <p className="mt-4 text-xs font-semibold leading-6 text-slate-400">
-              Digital Payments
-              <span className="mx-2 text-[#28c5e8]">|</span>
-              Merchant Solutions
-              <span className="mx-2 text-[#28c5e8]">|</span>
-              Collections
-              <span className="mx-2 text-[#28c5e8]">|</span>
-              Payment Technology
-            </p> */}
 
             {/* Social icons: add official URLs when available */}
             <div className="mt-6 flex items-center gap-3">
@@ -127,19 +114,14 @@ function Footer() {
                   >
                     <Icon className="h-5 w-5" />
                   </span>
-                )
+                ),
               )}
             </div>
-
-           
           </div>
 
           {/* Navigation columns */}
           {columns.map((column) => (
-            <div
-              key={column.title}
-              className="lg:col-span-2"
-            >
+            <div key={column.title} className="lg:col-span-2">
               <h4 className="text-base font-bold tracking-wide text-white">
                 {column.title}
               </h4>
@@ -168,30 +150,41 @@ function Footer() {
                   </li>
                 ))}
               </ul>
-              {column.title === "Company" && (
-  <div className="mt-6 border-t border-white/10 pt-5">
-    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-      Contact Us
-    </p>
-
-    <div className="mt-3 flex items-start gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0878d1]/20 text-[#28c5e8]">
-        <Phone className="h-4 w-4" />
-      </div>
-
-      <div>
-      
-        <p className="mt-1 text-sm font-semibold text-white">
-          +91 70836 45607
-        </p>
-      </div>
-    </div>
-  </div>
-)}
             </div>
           ))}
+          {/* Contact Us */}
+          <div className="lg:col-span-3">
+            <h4 className="text-base font-bold tracking-wide text-white">
+              Contact Us
+            </h4>
 
-          
+            <div className="mt-3 h-1 w-10 rounded-full bg-gradient-to-r from-[#0878d1] to-[#28c5e8]" />
+
+            {/* Phone */}
+            <div className="mt-6 flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0878d1]/20 text-[#28c5e8]">
+                <Phone className="h-4 w-4" />
+              </div>
+
+              <p className="break-words pt-1 text-sm font-semibold text-white">
+                +91 70836 45607
+              </p>
+            </div>
+
+            {/* Email */}
+            <div className="mt-4 flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0878d1]/20 text-[#28c5e8]">
+                <Mail className="h-4 w-4" />
+              </div>
+
+              <a
+                href="mailto:info@smarthubpay.in"
+                className="min-w-0 break-all pt-1 text-sm font-semibold text-white transition-colors hover:text-[#28c5e8]"
+              >
+                info@smarthubpay.in
+              </a>
+            </div>
+          </div>
         </div>
 
         {/* Copyright bar */}

@@ -13,9 +13,9 @@ export default function Nav() {
   }, []);
 
   const links = [
-    { label: "Products", href: "#products" },
-    { label: "Services", href: "#services" },
-    { label: "About Us", href: "#about" },
+    { label: "Products", href: "/#products" },
+    { label: "Services", href: "/#services" },
+    { label: "About Us", href: "/landing/aboutUs" },
   ];
 
   const linkClass =

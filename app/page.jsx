@@ -471,8 +471,12 @@ function Strip() {
   const [paused, setPaused] = useState(false);
   const [open, setOpen] = useState(null);
   useEffect(() => {
-    const f = () =>
-      setPer(window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 4);
+    const f = () => {
+      const nextPer =
+        window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 4;
+      setPer(nextPer);
+      setIdx((current) => Math.min(current, items.length - nextPer));
+    };
     f();
     window.addEventListener("resize", f);
     return () => window.removeEventListener("resize", f);
@@ -605,7 +609,7 @@ const services = [
 
 function Services() {
   return (
-    <section id="services" className="py-4">
+    <section id="services" className="scroll-mt-24 py-4">
       <div className="mx-auto max-w-7xl px-6">
         <div className="reveal text-center">
           <Pill>Our Services</Pill>
@@ -664,7 +668,7 @@ function Services() {
 
 function Merchants() {
   return (
-    <section id="onboard" className="py-6 px-4">
+    <section id="onboard" className="scroll-mt-24 py-6 px-4">
       <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 lg:grid-cols-2 border border-primary py-2 rounded-3xl">
         <div className="reveal relative">
           <img
