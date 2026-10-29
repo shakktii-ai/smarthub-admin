@@ -716,7 +716,7 @@ function Merchants() {
         <button
   type="button"
   onClick={() =>
-    toast.info("Coming soon!", {
+    toast.info("Coming soon on App Store and Play store", {
       position: "top-right",
       autoClose: 3000,
     })
