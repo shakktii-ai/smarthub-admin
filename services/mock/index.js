@@ -38,6 +38,7 @@ export async function listRecords(resource, p = {}) {
       counts[r[tabField]] = (counts[r[tabField]] || 0) + 1;
     });
   const all = rows.length;
+  const scopedRows = rows;
   if (tabField && tab && tab !== "All")
     rows = rows.filter((r) => r[tabField] === tab);
   return delay({
@@ -45,12 +46,24 @@ export async function listRecords(resource, p = {}) {
     total: rows.length,
     all,
     counts,
-    allRows: rows,
+    allRows: scopedRows,
   });
 }
 
 export function getFilterOptions(resource, key) {
   return [...new Set((T(resource) || []).map((r) => r[key]))].sort();
+}
+
+// The pickers ask for a page of matches, not the whole table.
+export async function searchRecords(resource, term, limit = 20) {
+  const rows = T(resource) || [];
+  const q = String(term || "").trim().toLowerCase();
+  const matched = q
+    ? rows.filter((r) =>
+        Object.values(r).some((v) => String(v ?? "").toLowerCase().includes(q)),
+      )
+    : rows;
+  return delay(matched.slice(0, limit));
 }
 
 export async function createRecord(resource, values, cfg = {}) {
@@ -71,6 +84,30 @@ export async function createRecord(resource, values, cfg = {}) {
   return delay(row);
 }
 
+// The demo rows are already written in the UI's own vocabulary, so opening the edit form is a
+// copy of the row; only the REST implementation has to translate backend enums back into labels.
+export async function getEditValues(resource, row) {
+  return delay({ ...row });
+}
+
+// The demo equivalent of the REST PATCH: only the boxes the operator changed arrive, so the rest of
+// the row keeps its values. Status stays out because publish/archive are action buttons here too.
+export async function updateRecord(resource, id, values) {
+  const rows = T(resource);
+  const row = rows.find((r) => r.id === id);
+  if (!row) throw new Error("Record not found");
+  Object.assign(row, values);
+  return delay({ ...row });
+}
+
+export async function deleteRecord(resource, id) {
+  const rows = T(resource);
+  const i = rows.findIndex((r) => r.id === id);
+  if (i === -1) throw new Error("Record not found");
+  rows.splice(i, 1);
+  return delay(true);
+}
+
 // Frontend simulation only: no payment, refund, KYC or settlement is executed.
 export async function performAction(resource, id, action) {
   const row = T(resource).find((r) => r.id === id);
@@ -78,6 +115,43 @@ export async function performAction(resource, id, action) {
   const field = T(resource)[0].status !== undefined ? "status" : null;
   if (field && action.setStatus) row[field] = action.setStatus;
   return delay({ ...row });
+}
+
+// Demo thread: canned replies per ticket, mutated in memory so the send box appears to work.
+const THREADS = new Map();
+export async function getTicketMessages(ref) {
+  if (!THREADS.has(ref)) {
+    THREADS.set(ref, [
+      {
+        id: `${ref}-1`,
+        author: "Merchant",
+        body: "Raising this from the app - need help with settlement.",
+        internal: false,
+        createdOn: "Jan 12, 2026 10:24 AM",
+      },
+      {
+        id: `${ref}-2`,
+        author: "Support",
+        body: "Thanks, checking with the settlement provider.",
+        internal: false,
+        createdOn: "Jan 12, 2026 11:05 AM",
+      },
+    ]);
+  }
+  return delay([...THREADS.get(ref)]);
+}
+
+export async function addTicketMessage(ref, body, isInternal = false) {
+  const list = THREADS.get(ref) || (await getTicketMessages(ref));
+  list.push({
+    id: `${ref}-${list.length + 1}`,
+    author: isInternal ? "Support (internal)" : "Support",
+    body,
+    internal: Boolean(isInternal),
+    createdOn: new Date().toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }),
+  });
+  THREADS.set(ref, list);
+  return delay(true);
 }
 
 export async function getDashboard() {
@@ -96,6 +170,8 @@ const app = (id) => {
   if (!a) throw new Error("Application not found");
   return a;
 };
+// The REST detail view always carries an outlets array; the demo rows do not model outlets.
+const appView = (row) => ({ outlets: [], ...structuredClone(row) });
 export async function getOnboardingOverview() {
   const rows = DB.onboarding;
   const counts = {};
@@ -113,11 +189,11 @@ export async function getOnboardingOverview() {
     pendingDocs: open.filter((r) =>
       r.documents.some((d) => d.status === "Uploaded"),
     ).length,
-    pendingBank: open.filter((r) => r.bankStatus !== "Verified").length,
+    pendingKyc: open.filter((r) => r.bankStatus !== "Verified").length,
   });
 }
 export async function getApplication(id) {
-  return delay(structuredClone(app(id)));
+  return delay(appView(app(id)));
 }
 export async function addApplication(v, submit = true) {
   const row = {
@@ -154,7 +230,7 @@ export async function verifyDocument(id, name, status, remarks) {
   const d = app(id).documents.find((x) => x.name === name);
   d.status = status;
   d.remarks = remarks;
-  return delay(structuredClone(app(id)));
+  return delay(appView(app(id)));
 }
 export async function runPennyDrop(id) {
   Object.assign(app(id), {
@@ -162,7 +238,14 @@ export async function runPennyDrop(id) {
     pennyRef: `PD-${Date.now().toString().slice(-6)}`,
     pennyOn: "Oct 10, 2026",
   });
-  return delay(structuredClone(app(id)));
+  return delay(appView(app(id)));
+}
+export async function startApplicationReview(id) {
+  const a = app(id);
+  if (!["Submitted", "Under Review"].includes(a.status))
+    throw new Error("Only a submitted application can be reviewed");
+  a.status = "Under Review";
+  return delay(appView(a));
 }
 export async function approveApplication(id) {
   const a = app(id);
@@ -188,13 +271,13 @@ export async function approveApplication(id) {
     status: "Active",
     iso: "2026-10-10",
   });
-  return delay(structuredClone(a));
+  return delay(appView(a));
 }
 export async function rejectApplication(id, reason, remarks) {
   const a = app(id);
   a.status = "Rejected";
   a.rejectionReason = `${reason}: ${remarks}`;
-  return delay(structuredClone(a));
+  return delay(appView(a));
 }
 
 // ---- Collection Admin (frontend simulation: no real payment is collected) ----
@@ -312,7 +395,7 @@ export async function collectEmi(id) {
 export async function getMerchant(id) {
   const m = DB.merchants.find((x) => x.id === id);
   if (!m) throw new Error("Merchant not found");
-  return delay(structuredClone(m));
+  return delay({ outlets: [], ...(structuredClone(m)) });
 }
 export async function updateMerchant(id, patch) {
   const m = DB.merchants.find((x) => x.id === id);
@@ -324,7 +407,49 @@ export async function updateMerchant(id, patch) {
       event: `Status changed to ${patch.status}`,
       by: "Amit Sharma",
     });
-  return delay(structuredClone(m));
+  return delay({ outlets: [], ...(structuredClone(m)) });
+}
+
+export async function setMerchantStatus(id, next) {
+  return updateMerchant(id, { status: next });
+}
+
+// The demo merchant rows carry no onboarding lifecycle, so a step only moves the label and
+// records the event the way the real transition route would.
+export async function merchantOnboardingStep(id, step) {
+  const labels = {
+    submit: "Application submitted",
+    review: "Under review",
+    approve: "Approved",
+    activate: "Active",
+  };
+  if (!labels[step]) throw new Error(`"${step}" is not an onboarding step.`);
+  return updateMerchant(id, { onboardingStatus: labels[step] });
+}
+
+export async function rejectMerchant(id, reason) {
+  const text = String(reason ?? "").trim();
+  if (!text) throw new Error("A rejection needs a reason.");
+  return updateMerchant(id, {
+    onboardingStatus: "Rejected",
+    status: "Rejected",
+    rejectionReason: text,
+  });
+}
+
+// Mock merchants were never created from an application, so there is nothing to point back to.
+export async function applicationForMerchant() {
+  return delay("");
+}
+
+// Mock rows have no stored files, so a download can only mean the backend is wired up.
+export async function getFileText(path) {
+  throw new Error(`Mock data has no stored file for ${path}.`);
+}
+
+// The same for artwork: mock mode has no object store to put a file in.
+export async function uploadMedia(file) {
+  throw new Error(`Mock data cannot upload ${file?.name || "a file"}.`);
 }
 
 // ---- Super Admin (frontend simulation) ----
@@ -392,4 +517,66 @@ export async function getSuperAdminDashboard() {
     pending: S.sa_maker.filter((x) => x.status === "Pending").slice(0, 5),
     audit: S.sa_audit.slice(0, 5),
   });
+}
+
+// Mock data never reaches a vendor, so every channel reports the honest state
+// for a machine that is not wired to one: the stub, holding nothing.
+export async function getNotificationHealth() {
+  return delay({
+    overall: "disabled",
+    generatedAt: new Date().toISOString(),
+    windowMinutes: 15,
+    queue: {
+      queued: 0,
+      held: 0,
+      oldestQueuedAt: null,
+      maxRows: 5000,
+      ttlMinutes: 120,
+      isFull: false,
+    },
+    channels: ["sms", "email", "whatsapp", "push"].map((channel) => ({
+      channel,
+      provider: "stub",
+      state: "disabled",
+      isStub: true,
+      credentialsPresent: true,
+      configError: null,
+      holdsTraffic: false,
+      queued: 0,
+      windowMinutes: 15,
+      samples: 0,
+      successes: 0,
+      failures: 0,
+      successRate: null,
+      consecutiveFailures: 0,
+      lastAttemptAt: null,
+      lastSuccessAt: null,
+      lastError: null,
+    })),
+  });
+}
+
+export async function drainNotificationQueue() {
+  return delay({
+    checked: 0,
+    delivered: 0,
+    failed: 0,
+    dropped: 0,
+    expired: 0,
+    held: 0,
+    queued: 0,
+    heldChannels: [],
+  });
+}
+
+// Loan review is backend-only: the documents live in object storage behind presigned links the
+// mock layer does not have. These keep the barrel honest when NEXT_PUBLIC_USE_MOCKS is on.
+export async function getLoan() {
+  throw new Error("Loan review needs the live backend; mock mode has no loan documents.");
+}
+export async function getLoanDocumentUrl() {
+  throw new Error("Document preview needs the live backend.");
+}
+export async function getBorrowerLoans() {
+  return delay([]);
 }

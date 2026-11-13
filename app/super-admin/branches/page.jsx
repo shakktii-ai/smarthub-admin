@@ -20,34 +20,36 @@ export default async function BranchesPage() {
     );
   }
 
-const { data, error } = await auth.admin
-  .from('branches')
-  .select(`
-    id,
-    name,
-    code,
-    city,
-    address,
-    is_active,
-    created_at,
-    territories (
-      id,
-      name,
-      state
-    )
-  `)
-  .order('created_at', { ascending: false });
+const list = await auth.api
+  .get('/api/branches/v1', { limit: 200 })
+  .catch((loadError) => {
+    console.error('Load branches failed:', loadError.message);
+    return null;
+  });
 
-
-  if (error) {
-    console.error('Load branches failed:', error.message);
-
+  if (!list) {
     return (
       <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-        Unable to load branches. Please check your database configuration.
+        Unable to load branches. Please check the API configuration.
       </p>
     );
   }
 
-  return <BranchesClient branches={data || []} />;
+  // The backend has no territory model, so `territories` is always empty here.
+  return (
+    <BranchesClient
+      branches={(list.items || [])
+        .map((b) => ({
+          id: b.branch_code,
+          name: b.name,
+          code: b.branch_code,
+          city: b.city,
+          address: b.address,
+          is_active: b.status === 'active',
+          created_at: b.created_at,
+          territories: [],
+        }))
+        .sort((x, y) => (x.created_at < y.created_at ? 1 : -1))}
+    />
+  );
 }

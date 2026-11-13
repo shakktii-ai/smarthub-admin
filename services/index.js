@@ -1,11 +1,15 @@
 // The ONLY import point for the UI. `useMocks` is a build-time constant that is false in production,
-// so the mock module is not loaded there; Supabase services are used instead.
+// so the mock module is not loaded there and the backend REST implementation is used instead.
 import { API_CONFIG } from '@/config/api';
 
-const impl = () => (API_CONFIG.useMocks ? import('./mock') : import('./supabase'));
+const impl = () => (API_CONFIG.useMocks ? import('./mock') : import('./api'));
 export const listRecords = async (...a) => (await impl()).listRecords(...a);
 export const getFilterOptions = async (...a) => (await impl()).getFilterOptions(...a);
+export const searchRecords = async (...a) => (await impl()).searchRecords(...a);
 export const createRecord = async (...a) => (await impl()).createRecord(...a);
+export const getEditValues = async (...a) => (await impl()).getEditValues(...a);
+export const updateRecord = async (...a) => (await impl()).updateRecord(...a);
+export const deleteRecord = async (...a) => (await impl()).deleteRecord(...a);
 export const performAction = async (...a) => (await impl()).performAction(...a);
 export const getDashboard = async (...a) => (await impl()).getDashboard(...a);
 export const getRecentFeeds = async (...a) => (await impl()).getRecentFeeds(...a);
@@ -13,11 +17,28 @@ export const getOnboardingOverview = async (...a) => (await impl()).getOnboardin
 export const getApplication = async (...a) => (await impl()).getApplication(...a);
 export const addApplication = async (...a) => (await impl()).addApplication(...a);
 export const verifyDocument = async (...a) => (await impl()).verifyDocument(...a);
+export const verifyBank = async (...a) => (await impl()).verifyBank(...a);
 export const runPennyDrop = async (...a) => (await impl()).runPennyDrop(...a);
 export const approveApplication = async (...a) => (await impl()).approveApplication(...a);
+export const startApplicationReview = async (...a) => (await impl()).startApplicationReview(...a);
 export const rejectApplication = async (...a) => (await impl()).rejectApplication(...a);
 export const getCollectionDashboard = async (...a) => (await impl()).getCollectionDashboard(...a);
+export const getCollectionAutoPayOverview = async (...a) => (await impl()).getCollectionAutoPayOverview(...a);
+export const reconcilePendingDebits = async (...a) => (await impl()).reconcilePendingDebits(...a);
 export const collectEmi = async (...a) => (await impl()).collectEmi(...a);
 export const getMerchant = async (...a) => (await impl()).getMerchant(...a);
 export const updateMerchant = async (...a) => (await impl()).updateMerchant(...a);
+export const setMerchantStatus = async (...a) => (await impl()).setMerchantStatus(...a);
+export const merchantOnboardingStep = async (...a) => (await impl()).merchantOnboardingStep(...a);
+export const rejectMerchant = async (...a) => (await impl()).rejectMerchant(...a);
+export const applicationForMerchant = async (...a) => (await impl()).applicationForMerchant(...a);
 export const getSuperAdminDashboard = async (...a) => (await impl()).getSuperAdminDashboard(...a);
+export const getFileText = async (...a) => (await impl()).getFileText(...a);
+export const uploadMedia = async (...a) => (await impl()).uploadMedia(...a);
+export const getNotificationHealth = async (...a) => (await impl()).getNotificationHealth(...a);
+export const drainNotificationQueue = async (...a) => (await impl()).drainNotificationQueue(...a);
+export const getTicketMessages = async (...a) => (await impl()).getTicketMessages(...a);
+export const addTicketMessage = async (...a) => (await impl()).addTicketMessage(...a);
+export const getLoan = async (...a) => (await impl()).getLoan(...a);
+export const getLoanDocumentUrl = async (...a) => (await impl()).getLoanDocumentUrl(...a);
+export const getBorrowerLoans = async (...a) => (await impl()).getBorrowerLoans(...a);

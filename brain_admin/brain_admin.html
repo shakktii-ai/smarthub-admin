@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>smarthub-admin — the admin panel in one file</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2e;--panel2:#0f1626;--ink:#e9edf8;--muted:#9aa7c4;--line:#25314f;--accent:#5b8cff;--cyan:#22d3ee;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--info:#a78bfa;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme: light){:root{--bg:#f6f8fc;--panel:#fff;--panel2:#f2f5fb;--ink:#131a2b;--muted:#5b6782;--line:#dbe2f0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+code,.mono{font-family:var(--mono);font-size:.88em;background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+header.masthead{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,var(--panel),var(--panel) 70%,transparent);border-bottom:1px solid var(--line);padding:14px 22px 12px}
+.masthead h1{margin:0;font-size:19px}.masthead .sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pill{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;background:var(--panel2)}
+.pill.here{border-color:var(--accent);color:var(--accent)}
+#search{margin-left:auto;border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:8px;padding:6px 10px;font-size:13px;min-width:210px}
+.layout{display:grid;grid-template-columns:236px minmax(0,1fr);gap:26px;max-width:1500px;margin:0 auto;padding:22px}
+nav#toc{position:sticky;top:104px;align-self:start;font-size:13px;max-height:calc(100vh - 130px);overflow:auto}
+nav#toc a{display:block;color:var(--muted);padding:5px 9px;border-left:2px solid var(--line)}
+nav#toc a.on{color:var(--accent);border-left-color:var(--accent);background:var(--panel2)}
+main{min-width:0}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:20px;scroll-margin-top:104px}
+section>h2{margin:0 0 4px;font-size:17px}section>p.lead{color:var(--muted);margin:0 0 16px;font-size:13.5px}
+h3{font-size:14px;margin:22px 0 8px}h3:first-of-type{margin-top:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(124px,1fr));gap:10px}
+.kpi{border:1px solid var(--line);border-radius:11px;padding:11px 13px;background:var(--panel2)}
+.kpi b{display:block;font-size:22px;line-height:1.1}.kpi span{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.6px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px;position:sticky;top:0;background:var(--panel)}
+tr:hover td{background:var(--panel2)}
+.badge{display:inline-block;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:600;letter-spacing:.4px;border:1px solid}
+.b-live{color:var(--ok);border-color:var(--ok)}.b-planned{color:var(--info);border-color:var(--info)}.b-mock{color:var(--warn);border-color:var(--warn)}
+.b-stale{color:var(--bad);border-color:var(--bad)}.b-unv{color:var(--cyan);border-color:var(--cyan)}.b-partial{color:var(--warn);border-color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}.chip{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:5px 10px;font-size:12.5px}
+.node{border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:14px 16px;margin-top:12px}
+.node h4{margin:0 0 4px;font-size:15px}.node .meta{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+ul.tight{margin:6px 0 0;padding-left:19px}ul.tight li{margin-bottom:5px}
+ol.steps{margin:0;padding-left:20px}ol.steps li{margin-bottom:6px}
+.note{border-left:3px solid var(--cyan);background:var(--panel2);padding:10px 13px;border-radius:0 8px 8px 0;font-size:13px;margin-top:14px}
+.note.warn{border-left-color:var(--warn)}.note.bad{border-left-color:var(--bad)}.note.ok{border-left-color:var(--ok)}
+footer{color:var(--muted);font-size:12px;padding:8px 22px 40px;max-width:1500px;margin:0 auto}
+.hide{display:none}
+@media (max-width:1000px){.layout{grid-template-columns:1fr}nav#toc{position:static;max-height:none;display:flex;flex-wrap:wrap;gap:4px}}
+@media print{header.masthead,nav#toc{position:static}body{background:#fff;color:#111}section,.node,.note{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <h1>smarthub-admin — the panel in one file</h1>
+  <div class="sub">Next.js 14 App Router, JavaScript (no TypeScript), four role dashboards on one FastAPI backend. This is the doc of record for the admin panel; <code>README.md</code> is not — it still says "No backend, database or real auth", which stopped being true when the panel was re-pointed at the backend REST API.</div>
+  <div class="pills">
+    <a class="pill" href="../../SmartHubPay.html">Master doc</a>
+    <a class="pill" href="../../smarthubpay_backend/brain/brain.html">Backend</a>
+    <a class="pill" href="../../smarthubpay_merchant/brain_merchant/brain_merchant.html">Merchant</a>
+    <a class="pill" href="../../smarthubpay_borrower/brain_borrower/brain_borrower.html">Borrower</a>
+    <a class="pill here" href="#">Admin panel</a>
+    <input id="search" type="search" placeholder="filter this document…" autocomplete="off">
+  </div>
+</header>
+<div class="layout">
+<nav id="toc"></nav>
+<main>
+
+<section id="what">
+  <h2>What this panel is</h2>
+  <p class="lead">The operations back office. Staff sign in with an email and password, land on the dashboard their backend role decides, and run the business: approve merchants, decide refunds, reconcile settlements, chase overdue loans, publish app content, send campaigns. It renders no money math of its own — every number is the backend's, and every write is an HTTP call the backend authorises again.</p>
+  <div class="kpis">
+    <div class="kpi"><b>82</b><span>page files</span></div>
+    <div class="kpi"><b>51</b><span>pages via ResourcePage</span></div>
+    <div class="kpi"><b>51</b><span>page-key configs</span></div>
+    <div class="kpi"><b>40</b><span>resource definitions</span></div>
+    <div class="kpi"><b>23</b><span>backend namespaces</span></div>
+    <div class="kpi"><b>4</b><span>roles, 1 is a stub</span></div>
+    <div class="kpi"><b>13</b><span>server-action files</span></div>
+    <div class="kpi"><b>180</b><span>js/jsx files</span></div>
+  </div>
+  <div class="note ok"><b>The one fact that decides everything else.</b> There is exactly one data seam. UI code imports <code>@/services</code> and nothing else; <code>services/index.js</code> chooses the implementation from <code>API_CONFIG.useMocks</code>, which is a <b>build-time</b> constant read from <code>NEXT_PUBLIC_USE_MOCKS</code>. In a real build that is false, the mock module is never imported, and every call goes to FastAPI. If a screen shows data that no backend endpoint can produce, the build was made with mocks on — check the Network tab before believing a screenshot.</div>
+  <div class="note warn"><b>Not a test suite.</b> There is no test runner in <code>package.json</code> — only <code>dev</code>, <code>build</code>, <code>start</code>. Verification of this panel is the build, the lint-free read, and probing the deployed API. Nothing here is "proven by tests".</div>
+</section>
+
+<section id="stack">
+  <h2>Stack, commands, and the one build caveat</h2>
+  <table class="tbl">
+    <thead><tr><th>Thing</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Framework</td><td><code>next</code> 14.2.15 (pinned), <code>react</code>/<code>react-dom</code> ^18.3.1, App Router, <b>JavaScript</b> with <code>jsconfig.json</code> paths (<code>@/*</code>) — no TypeScript, no types to trust.</td></tr>
+      <tr><td>Styling</td><td>Tailwind CSS ^3.4.13 + <code>postcss</code> + <code>autoprefixer</code>; icons <code>lucide-react</code>; charts <code>recharts</code> ^2.12.7; toasts <code>react-toastify</code> ^11.1.</td></tr>
+      <tr><td>Server-only guard</td><td><code>server-only</code> ^0.0.1 is a real dependency and <code>lib/api/server.js</code>, <code>lib/auth/backend.js</code> and <code>lib/auth/session.js</code> import it, so a stray client import fails the build rather than leaking a token path.</td></tr>
+      <tr><td>Format</td><td><code>prettier</code> ^3.9.10 as a dev dependency; there is no lint script, so nothing enforces it.</td></tr>
+      <tr><td>Commands</td><td><code>npm install</code> → <code>npm run dev</code> (localhost:3000) → <code>npm run build &amp;&amp; npm start</code>.</td></tr>
+      <tr><td>Build caveat</td><td><code>npx next build</code> fails with <code>EPERM: operation not permitted, scandir '.next\race'</code> while a <code>next dev</code> server holds the same directory. Stop the dev server (or build from a separate checkout) before validating a production build.</td></tr>
+      <tr><td>Repo state</td><td>Branch <code>main</code>, last commit <code>3c95df8</code> "Update page.jsx" on 2026-10-29. Everything since then — the whole backend re-point, campaigns, service health, MFA, audit, partners, the super-admin merchant screens and the app-content edit/delete plus the inbox merchant picker — is <b>uncommitted</b>: <code>git status --porcelain</code> lists 92 files. This repo is under git, so that is recoverable work in danger, not a missing feature.</td></tr>
+      <tr><td>Leftover Supabase</td><td><code>supabase/migrations/001_core.sql</code> is still in the tree. Nothing imports Supabase any more; that file describes a database this panel no longer talks to. Do not re-derive schema from it.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="roles">
+  <h2>The four dashboards</h2>
+  <p class="lead">One app, four navigation trees, chosen by the role claim in the backend's access token. The mapping is in <code>config/auth.js</code>; the nav arrays are in <code>config/dashboards/*.js</code>; the table configs are in <code>data/pages/*.js</code>.</p>
+  <table id="roleTable"></table>
+  <div class="note"><b>Roles arrive UPPER_SNAKE and are lower-cased.</b> <code>pickDashboardRole()</code> normalises the backend's <code>SUPER_ADMIN</code>-style claims before they are matched against <code>ROLES</code>. A new backend role needs an entry in <code>ROLES</code> here, or the holder is refused a dashboard at sign-in with "no assigned dashboard".</div>
+  <div class="note warn"><b>Access is strict-prefix, on purpose.</b> <code>canAccessPath(role, path)</code> allows only the role's own prefix plus <code>EXTRA_ACCESS</code>, and <code>EXTRA_ACCESS</code> is <code>{ super_admin: [] }</code> — empty. A Super Admin cannot open a Merchant Admin URL. That is the deliberate choice; if you ever widen it, do it in that one object and nowhere else. It is also the reason <i>approve this merchant</i> looked missing: the review screen existed, behind a prefix this role cannot reach. The fix was <code>/super-admin/applications</code> and prop-driven components, not a looser ACL — <code>EXTRA_ACCESS</code> is still empty.</div>
+</section>
+
+<section id="screens">
+  <h2>Screen map, with what each one really is</h2>
+  <p class="lead">"Config table" means <code>&lt;ResourcePage dashboard pageKey&gt;</code> reading <code>data/pages/&lt;role&gt;.js</code> → a resource in <code>services/api/resources.js</code> → one backend endpoint. "Hand-written" means a component that calls <code>@/services</code> directly. "Server action" means a <code>'use server'</code> file that authorises and calls the backend itself, bypassing the seam by design.</p>
+  <table class="tbl" id="screenTable"></table>
+</section>
+
+<section id="seam">
+  <h2>The data seam, end to end</h2>
+  <ol class="steps">
+    <li><code>services/index.js</code> exports 32 named functions, each one <code>(await impl()).fn(...)</code> where <code>impl</code> picks <code>./mock</code> or <code>./api</code>. Adding a call means adding one line here and the same-named export in both implementations — that is the tax, and it is what keeps a mock build honest. The four added with the app-content/inbox pass are <code>updateRecord</code>, <code>deleteRecord</code>, <code>getEditValues</code> and <code>searchRecords</code>. <b>One seam export is already broken in a mock build</b>: the API file defines <code>verifyBank</code>, the mock defines <code>runPennyDrop</code>, both are re-exported here, and <code>components/onboarding/ApplicationDetail.jsx</code> imports <code>verifyBank</code> — so with <code>NEXT_PUBLIC_USE_MOCKS=true</code> the bank-verification tab throws.</li>
+    <li><code>services/api/resources.js</code> declares 40 resource records, the <code>c_*</code> and <code>sa_*</code> alias keys counted inside that number — each a path, a shape, which filters/query params it supports, how a backend row becomes a UI row, and what the create/edit form sends. They reference 23 distinct <code>/api/*/v1</code> namespaces.</li>
+    <li><code>services/api/index.js</code> implements the seam functions against those records. Lists are <b>fetched in pages of 200 and sliced in memory</b>, capped by <code>MAX_ROWS = 1000</code>, because FastAPI caps <code>limit</code> per route (200 on most lists, 500 on some) and a single oversized request would silently return a partial set and make every other tab read zero. <code>searchRecords</code> is the deliberate opposite: <b>one bounded page, server-side <code>q</code> when the resource declares it supports</b>, because a picker that asks "which merchant do you mean?" while the operator types must not re-pull the whole directory per keystroke.</li>
+    <li><code>components/ResourcePage.jsx</code> renders the table, tabs, filters, stats and the create/edit form from the page config, with CSV export named <code>&lt;resource&gt;-YYYY-MM-DD.csv</code>. It now also renders <b>Edit and Delete whenever the config declares them</b> (<code>config.edit</code>, whose <code>skip</code> list drops fields the PATCH cannot take, and <code>config.delete.confirm</code>) — the generic renderer, not per-screen code, which is why app content was the first pair and campaigns the second. Two screens have since <b>left</b> it: merchants, because a directory with lifecycle buttons is not a config table, and legal documents, because a policy is not a row — a JSON textarea is the wrong control for prose. Edit pre-fills from <code>row.raw</code> through <code>RESOURCES[resource].forEdit</code>, never from the table: the display columns are lossy on purpose (<i>Yes</i>/<i>No</i>, <i>Web: https://…</i>) and writing those words back to an enum column is how a row gets corrupted.</li>
+    <li><code>UNMAPPED</code> is the honesty list: keys with no backing endpoint. Today it holds exactly one — <code>inventory</code>, because <code>/api/devices/v1</code> tracks paired devices, not purchase stock. A key listed there shows "no endpoint yet" instead of a fabricated number.</li>
+  </ol>
+  <div class="note ok"><b>Backend timestamps are naive UTC.</b> <code>resources.js</code> reads every timestamp through <code>utcDate()</code> before formatting. Without it a "Today" filter and an "Expired" label are wrong by the local offset — which is exactly how a published app-content row can look live to one person and expired to another. Writing is the mirror image and needs two different helpers: <code>utcWallClock()</code> turns what the operator typed into UTC for the request, and <code>localWallClock()</code> turns the stored value back into the wall clock a <code>datetime-local</code> box expects. Pre-fill an editable schedule window with the raw stored value and every edit drifts the window by five and a half hours.</div>
+  <div class="note warn"><b>Paging is client-side above the fetch.</b> The panel pulls up to 1000 rows and pages them in the browser. That is fine for the volumes today and wrong for a large merchant: the fix is a server-paged resource shape, not a bigger <code>MAX_ROWS</code>.</div>
+</section>
+
+<section id="auth">
+  <h2>Login, cookies and who actually checks permission</h2>
+  <p class="lead">The backend owns sessions. This panel only stores the tokens it is given and presents them; it never issues, edits or trusts its own notion of a user.</p>
+  <div class="grid2">
+    <div class="node">
+      <h4>Sign-in</h4>
+      <div class="meta">app/login/actions.js → lib/auth/backend.js</div>
+      <ul class="tight">
+        <li><code>POST /api/identity/v1/login</code> with <code>application/x-www-form-urlencoded</code> — the backend takes an <code>OAuth2PasswordRequestForm</code>, not JSON.</li>
+        <li>Local validation first (email shape, password ≥ 6), then <code>rateLimit("login:"+ip+":"+email, 8, 5 min)</code>. A failed response always calls <code>clearSession()</code> — a session is never written on a non-OK response.</li>
+        <li>If the backend replies <code>mfa_required</code>, the panel holds the <code>mfa_token</code> and asks for the authenticator code <b>or a recovery code</b> (<code>ABCDE-12345</code>), then <code>POST /api/identity/v1/mfa/verify</code> with the token in the <b>body</b>, not as a Bearer header. MFA attempts are rate-limited to 8 per 5 minutes. The verified response is read from <code>result.data.access_token</code>: <code>lib/auth/backend.js::post()</code> keeps the parsed body under <code>data</code> and never spreads it, so reading it off the wrapper is the difference between a working sign-in and a correct code that always fails.</li>
+        <li>If the backend replies <code>403 mfa_enrollment_required</code> — the platform policy refusing an administrator with no authenticator — the form does not give up: it calls <code>/mfa/enroll/start</code> with the same credentials, draws the returned <code>qr_svg</code>, and completes with <code>/mfa/enroll/complete</code>, which opens the session and returns the recovery codes for a one-time download. The rate limit is per <code>ip:email</code>, and a mistyped code keeps the scanned key instead of issuing a new one.</li>
+        <li>The landing dashboard comes from the role claim inside the backend-signed access token, never from the form.</li>
+      </ul>
+    </div>
+    <div class="node">
+      <h4>Two-factor, self-service</h4>
+      <div class="meta">app/account/security → components/account/SecuritySettings.jsx</div>
+      <ul class="tight">
+        <li><code>/account/security</code> is one screen shared by all four roles: <code>SHARED_PREFIX</code> in <code>config/auth.js</code> lets <code>canAccessPath</code> pass it for any role, and <code>app/account/layout.jsx</code> wraps it in the sidebar of the signed-in profile — four copies would drift apart.</li>
+        <li>Enrol, verify, turn off, replace lost recovery codes. The QR is the backend's own SVG data URI, so the secret never reaches a renderer, a vendor or page script.</li>
+        <li>The policy is displayed as a fact (<code>required_by_policy</code>) because flipping <code>MFA_REQUIRE_FOR_ADMINS</code> changes how every administrator signs in; that is a deploy decision, not a dashboard toggle.</li>
+        <li>Recovery codes are shown once and then only counted, because the backend stores hashes.</li>
+      </ul>
+    </div>
+    <div class="node">
+      <h4>Three cookies, two tiers</h4>
+      <div class="meta">config/api.js → lib/api/server.js writeSession()</div>
+      <ul class="tight">
+        <li><code>shp_access</code> — JS-readable, because <code>ResourcePage</code> is a client component and attaches it as a Bearer token.</li>
+        <li><code>shp_refresh</code> — <b>httpOnly</b>, never sent to the browser JS, spent only by the same-origin <code>/api/session/refresh</code>. Its cookie age is matched to the refresh token's own <code>exp</code> claim, falling back to 7 days.</li>
+        <li><code>shp_session</code> — a non-secret "1" marker so client code and middleware know a refresh cookie exists without being able to read it.</li>
+        <li>All three: <code>path=/</code>, <code>sameSite=lax</code>, <code>secure</code> only when <code>NODE_ENV=production</code>.</li>
+      </ul>
+    </div>
+    <div class="node">
+      <h4>Rotation and revocation</h4>
+      <div class="meta">app/api/session/refresh/route.js, lib/api/browser.js</div>
+      <ul class="tight">
+        <li>Browser code calls <code>POST /api/session/refresh</code> — a route in <i>this</i> app, which reads the httpOnly cookie, calls <code>POST /api/identity/v1/refresh</code>, writes the new pair and returns only the access token.</li>
+        <li>Any refresh failure clears the session and answers 401, so a revoked refresh token logs the user out rather than looping.</li>
+        <li><code>signOut()</code> calls <code>POST /api/identity/v1/logout</code> with the refresh token <i>and then</i> clears cookies — the backend revokes the session; the panel only forgets it.</li>
+      </ul>
+    </div>
+    <div class="node">
+      <h4>Server-side re-check</h4>
+      <div class="meta">lib/auth/session.js</div>
+      <ul class="tight">
+        <li><code>getCurrentProfile()</code> is wrapped in React <code>cache()</code> and calls <code>GET /api/identity/v1/me</code> on every request. Null if there is no usable session, if the reply is inactive, or if the role is not a dashboard role.</li>
+        <li><code>authorize(roles)</code> is the gate every server action starts with: 401 "Please sign in again." with no profile, 403 with the wrong role, otherwise <code>{ profile, api }</code> where <code>api</code> is the server client.</li>
+        <li>Tenancy: <code>organization_id</code> is filled from <code>branch_code</code> — the Supabase-era key kept so page code did not have to be rewritten. <code>merchant_code</code> travels alongside it.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note bad"><b>middleware.js decodes the JWT but does not verify its signature.</b> Its own comment says so: it is a routing hint that picks a landing page and bounces a role out of a URL it cannot see. Anyone with a forged <code>shp_access</code> can reach a page component. What contains the damage is that every read goes back through <code>serverApi</code> or a Bearer call the backend re-verifies (signature, expiry, revocation, role), and server actions call <code>authorize()</code> which re-reads <code>/me</code>. Consequence if a future screen renders data from a client component without a backend call: it would be showing unauthenticated input. Keep that shape impossible.</div>
+  <div class="note warn"><b>rateLimit() is a per-process Map.</b> Good for one instance; with several Next.js instances the window is per instance, and it is wiped on restart. The backend already has durable rate limiting — this one is only the sign-in form's local brake.</div>
+</section>
+
+<section id="money">
+  <h2>What the panel can change, and what it can only look at</h2>
+  <table class="tbl" id="powerTable"></table>
+  <div class="note ok"><b>Dangerous writes are two-step by construction.</b> Status changes in the page configs go through <code>set()</code>, which attaches a confirm message naming the rule: <i>"This writes to the backend. A checker (a different user) must approve sensitive actions in production."</i> The panel does not decide that by itself — it calls the backend, which holds the maker-checker queue and the ledger. The panel's job is to never make an action look reversible when it is not.</div>
+  <div class="note"><b>Refund decisions and reject notes are the backend's contract.</b> The panel sends what the endpoint asks for; a decision without a note is accepted or refused by the backend, not here. The 500 that used to happen when <code>RefundDecisionRequest.note</code> was missing was fixed on the backend side, so the panel sends the field and does not compensate.</div>
+</section>
+
+<section id="health">
+  <h2>The service health strip</h2>
+  <p class="lead">Six states, all derived by the backend from traffic it actually saw, none of them a config flag. <code>components/superadmin/ServiceHealth.jsx</code> is the single reader.</p>
+  <table class="tbl" id="stateTable"></table>
+  <ul class="tight">
+    <li><code>POLL_SECONDS = 20</code>, and the interval pauses while <code>document.hidden</code> — the one place in the panel that re-polls, because a health strip that never moves is the static picture this replaced.</li>
+    <li>Both the dashboard strip and <code>CampaignStudio.jsx</code> import <code>useServiceHealth()</code>, so the composer and the dashboard cannot disagree about whether WhatsApp is delivering.</li>
+    <li><code>drainNotificationQueue()</code> is exposed next to it: a human can push the held backlog out once the channel is back.</li>
+    <li>The labels are the backend's words on purpose. <code>disabled</code> means the stub is wired instead of a vendor — which is what a panel showing "Stub" means when <code>SMS_PROVIDER=stub</code>. That is the truth about the deployment, not a bug in this screen.</li>
+  </ul>
+</section>
+
+<section id="env">
+  <h2>Environment — names only</h2>
+  <p class="lead">There is no <code>.env.example</code> in this repo and the live <code>.env</code> is not read here. These are the names the code actually references; values are the owner's to set.</p>
+  <table class="tbl" id="envTable"></table>
+  <div class="note bad"><b>Both are baked at build time, not read at runtime.</b> <code>NEXT_PUBLIC_*</code> values are inlined into the bundle, so a production image built with <code>NEXT_PUBLIC_API_BASE_URL=http://localhost:8000</code> talks to the laptop it was built on forever. The <code>.next/</code> output in this working tree was built with <code>https://api.smarthubpay.com</code> inlined — useful as evidence of what a correct build looks like, and a reminder that the leftover build directory is not the deployed artefact.</div>
+</section>
+
+<section id="backend">
+  <h2>Which backend namespaces this panel consumes</h2>
+  <p class="lead">Counted from the paths referenced in <code>services/api/resources.js</code> — 22 namespaces through the resource layer. The KPI strip says 23 because that one counts every <code>/api/*/v1</code> literal in the panel, including the routes server actions call directly, which is exactly how the reviewer surface reaches the backend. Read alongside the backend doc; the contract lives there.</p>
+  <table class="tbl" id="nsTable"></table>
+  <div class="note"><b>The BFF split matters here.</b> Collection screens call <code>/api/collection-admin/v1</code> rather than the raw loan and payment features, so an agent sees only their own book and the scoping is one place. Merchant Admin lists use <code>/api/merchant-admin/v1</code> where it exists and the raw feature where it does not — that asymmetry is the backend's current state, not a panel bug.</div>
+</section>
+
+<section id="stale">
+  <h2>What is stale, wrong or misleading in this folder</h2>
+  <table class="tbl" id="staleTable"></table>
+</section>
+
+<section id="files">
+  <h2>File inventory</h2>
+  <p class="lead">The files that decide behaviour. Everything else is a component under <code>components/</code> rendered by one of the screens above.</p>
+  <table class="tbl" id="filesTable"></table>
+</section>
+
+<section id="open">
+  <h2>Open work</h2>
+  <div class="grid3">
+    <div class="node"><h4>Ship what exists</h4><ul class="tight">
+      <li>Commit the 94 uncommitted files — the backend re-point is uncommitted, so a bad checkout loses it</li>
+      <li>Answer the standing question: does the deployed panel point at the stub SMS provider, and is that deployment or the browser's stale bundle?</li>
+    </ul></div>
+    <div class="node"><h4>Finish the honest gaps</h4><ul class="tight">
+      <li>Sales staff &amp; merchant staff: no backend endpoints for staff or territories — the screens say so instead of faking a table. Document verification is no longer one of those gaps; KYC review works from both dashboards.</li>
+      <li>Device inventory: still <code>UNMAPPED</code></li>
+      <li>Legal consent evidence: nothing anywhere records <em>which version</em> a customer agreed to. <code>terms_policies.accepted_at</code> and <code>privacy_policy_accepted_at</code> are never written by an endpoint, so the version number identifies the words a page served but cannot be matched to a person. The studio stopped claiming otherwise; the record itself is the DPDP work.</li>
+      <li>Two legal stores: the apps read <code>/api/merchant-app/v1/legal</code>, which queries the Supabase <code>legal_documents</code> table, so publishing here changes the web pages and not the apps.</li>
+      <li>UPI Admin: nav, layout and dashboard exist; every card is <code>&lt;ComingSoon/&gt;</code> and the backend has no UPI feature</li>
+    </ul></div>
+    <div class="node"><h4>Structural</h4><ul class="tight">
+      <li>Server-side paging instead of 200×<code>MAX_ROWS</code> in memory</li>
+      <li>No test runner — a smoke test that signs in and reads one list would catch a bad <code>NEXT_PUBLIC_*</code> bake before a user does</li>
+      <li>No <code>.env.example</code>, so the two build-baked variables are invisible to a new deploy</li>
+      <li>Campaign fan-out still goes through the panel's batch loop, so an outage mid-broadcast fails the remaining addresses instead of holding them on the notification queue</li>
+    </ul></div>
+  </div>
+</section>
+
+</main>
+</div>
+<footer>
+  smarthub-admin · generated 2026-11-07 · counts re-derived 2026-11-08 (<code>find app -name 'page.jsx' | wc -l</code>; <code>grep -rl ResourcePage app --include=page.jsx | wc -l</code>; <code>grep -c '^    resource:' data/pages/*.js</code>; keys of <code>RESOURCES</code> in <code>services/api/resources.js</code>; <code>grep -c '^export ' services/index.js</code>; <code>grep -rhoE "/api/[a-z_-]+/v1" services app components lib --include=*.js --include=*.jsx | sort -u | wc -l</code>; <code>grep -rl "^'use server'" app lib components | wc -l</code>; <code>find . -name '*.js' -o -name '*.jsx'</code> minus <code>node_modules</code> and <code>.next</code>; <code>git status --porcelain | wc -l</code>) · sources: <code>package.json</code>, <code>app/</code> route tree, <code>services/</code>, <code>data/pages/</code>, <code>config/</code>, <code>lib/</code>, <code>middleware.js</code> — counts re-derived by command, not copied from the README.
+  <a href="../../SmartHubPay.html">Master document</a> · <a href="../../smarthubpay_backend/brain/brain.html">backend</a> · <a href="../../smarthubpay_merchant/brain_merchant/brain_merchant.html">merchant</a> · <a href="../../smarthubpay_borrower/brain_borrower/brain_borrower.html">borrower</a>
+</footer>
+<script>
+const ROLES=[
+["Super Admin","/super-admin","<code>/super-admin/dashboard</code>","live","8","app-content, app-inbox, config, legal, ledger, maker-checker, risk + hand-written dashboard, users, branches, app-flags, campaigns, audit-logs, partners, legal-documents, and since this pass the merchants directory and the applications queue, plus the shared /account/security","Platform-wide truth: who exists, what is allowed, what was approved, what the ledger says."],
+["Merchant Admin","/merchant-admin","<code>/merchant-admin/dashboard</code>","live","21","merchants, transactions, settlements, reports, devices, support, notifications, settings, staff + onboarding detail and a server-action sales-staff form, plus the shared /account/security","The merchant book: onboarding queue, KYB, transactions, refunds, settlement batches and payouts."],
+["Collection Admin","/collection-admin","<code>/collection-admin/dashboard</code>","live","23","loans, borrowers, emi, collections, payments, overdue, agents, reports, support, notifications, settings, plus the shared /account/security","The recovery book, all of it through <code>/api/collection-admin/v1</code> so an agent only ever sees their own borrowers."],
+["UPI Admin","/upi-admin","<code>/upi-admin/dashboard</code>","stub","0","nothing — one dashboard page of <code>&lt;ComingSoon/&gt;</code>, plus the shared /account/security","Reservation, not a feature. <code>config/dashboards/index.js</code> marks it <code>ready:false</code>; there is no UPI backend feature to point it at."]
+];
+const SCREENS=[
+["Public","/login","Server action","<code>POST /api/identity/v1/login</code>; then either the MFA challenge — an authenticator code <i>or</i> a one-time recovery code, because a lost phone must still open the door — or, when the platform policy refuses an unenrolled account, the enrolment step: the backend's own QR, a 6-digit verify, and the session plus recovery codes issued in that same call. Password reset via <code>/password/forgot</code>. The only way in; there is no demo login."],
+["Public","/auth/confirm","Route handler","Target of the recovery email. The backend reset is token-based and creates no session, so this forwards <code>token</code> to <code>/auth/set-password</code> and validates nothing yet."],
+["Public","/auth/set-password","Server action","<code>POST /api/identity/v1/password/reset</code> with <code>{token, new_password}</code>."],
+["Public","/landing/aboutUs, /privacyPolicy, /termCondition","Static-ish pages","Public legal/company pages; the <i>versioned</i> documents merchants agree to come from <code>/api/legal/v1</code>, not these."],
+["Public","/","Redirect","<code>redirect('/login')</code>. No role guessing, no chooser screen."],
+["All roles","/account/security","Hand-written + server actions","One screen shared by all four dashboards instead of four copies that drift apart: <code>SHARED_PREFIX = '/account'</code> in <code>config/auth.js</code> is allowed by <code>canAccessPath</code> for every role, <code>middleware.js</code> matches it, and the four nav configs plus the Topbar user menu link to it, while <code>app/account/layout.jsx</code> wraps it in the sidebar of the signed-in role. <code>actions.js</code> authorises without a role list — an administrator configures only their own two-factor — and rate-limits per profile. Status and remaining recovery codes, the platform policy read from the backend as a reported fact rather than a toggle, the scan-and-verify wizard (the QR is the API's own SVG, so the secret never leaves the backend process), turning two-factor off with password + code, replacing lost recovery codes without losing the enrolled device, and the one-time codes with copy and <code>.txt</code> download — they are stored as hashes, so this is the only time they are readable."],
+["Super","/super-admin/dashboard","Hand-written","<code>getSuperAdminDashboard()</code> — platform totals, admin list, recent audit, time series from the backend."],
+["Super","/super-admin/merchants","Hand-written + server actions","It was a read-only <code>merchants</code> config table, which is why every button on it did nothing. <code>components/superadmin/MerchantDirectory.jsx</code> is a server-paged directory (<code>q</code>, merchant <code>status</code>, <code>onboarding_status</code>) whose row actions are exactly the transitions the backend allows: approve, suspend, the onboarding steps listed by <code>MERCHANT_ONBOARDING_NEXT</code> — the panel-side mirror of <code>ONBOARDING_TRANSITIONS</code> in the merchant service — and reject with a reason of at least 8 characters. Nothing is offered that the backend would refuse. The identifier column reads <i>none — blocks approval</i>, because approving a merchant with neither a Zaakpay nor a custom id answers 422 <code>merchant_identifier_required</code>; that error now points back at Edit, where <code>zaakpay_identifier</code> and <code>custom_identifier</code> are editable against the backend's own <code>[A-Za-z0-9]{1,40}</code> pattern. Dead with the swap: <code>PAGES.merchants</code>."],
+["Super","/super-admin/merchants/[id]","Hand-written (shared component)","<code>components/merchants/MerchantDetail.jsx</code> takes <code>backHref</code>, <code>applicationBase</code>, <code>transactionsHref</code> and <code>auditPath</code> as props so one component serves both dashboards. The review screen was never missing — it lived behind a prefix <code>canAccessPath</code> refuses for super_admin, and the fix is the props, not a widened ACL."],
+["Super","/super-admin/applications","Hand-written + server actions","The application queue. <code>components/superadmin/ApplicationQueue.jsx</code> filters server-side by reference, business or owner and by the six <code>MerchantApplicationStatus</code> values, with quick chips for submitted / under review / approved / rejected. PAN and bank are drawn from the fields the backend already stamped, not re-derived from the business name, and every row links its decision trail at <code>/super-admin/audit-logs?resource=merchant_application&amp;resourceId=…</code>. A row that has been promoted also carries its <code>merchant_code</code>, which is the filter the applications endpoint exposes — that link is how the two lifecycles join. There is deliberately no create button: an application is what a merchant&rsquo;s app submits, so a form here would fabricate a control."],
+["Super","/super-admin/applications/[id]","Hand-written (shared component)","The same detail the Merchant Admin sees — document review, penny-drop bank verification, approve, reject — plus the KYC viewer. An <code>&lt;img&gt;</code> and an <code>&lt;iframe&gt;</code> cannot carry an Authorization header, so the document renders through the same-origin <code>app/api/kyc-document/[ref]/route.js</code>, which forwards the bearer server-side to <code>GET /api/merchant-admin/v1/onboarding/documents/{document_ref}/content</code>. That route is why this screen exists: nothing before it could return document bytes, so <i>verify the document</i> had nothing to verify against. Each view writes <code>kyc.document_viewed</code>."],
+["Super","/super-admin/risk · /ledger · /config · /legal · /maker-checker","Config tables","risk, ledger, settings (one endpoint, three scopes by <code>scope</code>), privacy-request intake, maker-checker queue."],
+["Super","/super-admin/legal-documents","Hand-written + server actions","<code>components/superadmin/LegalDocumentStudio.jsx</code>, served by <code>app/super-admin/legal-documents/page.jsx</code> + <code>actions.js</code> and configured by <code>config/legalDocuments.js</code>. It replaced a page config whose only authoring field was a textarea labelled <i>Sections (JSON)</i> with a placeholder showing <code>[{&quot;title&quot;:…</code> — which is how the privacy policy ended up written by whoever happened to know JSON, and why the live page and the stored document drifted apart. Three tabs: <b>Sections</b> (section cards with paragraph/bullet rows, subsections, a closing note, move and delete), <b>Paste plain English</b> (one text box, the marker legend printed verbatim from the parser, and a Convert that posts <code>content_text</code> so the server&rsquo;s tested parser does the structuring), and <b>Preview</b>, which mirrors the landing pages&rsquo; own markup rather than restyling it. Search plus the two dropdowns over the version list; per-row Publish / Archive / Copy into new draft / Delete; a published or archived version opens read-only, fields disabled rather than left live to fail on save. <code>effective_from</code> is a date input, not a datetime, because the column is a <code>Date</code>. <b>Dead with the swap:</b> <code>PAGES[&quot;legal-documents&quot;]</code>, the <code>sa_legalDocs</code> row mapper, <code>CREATORS.legalDocs</code> (which did <code>JSON.parse</code> on the textarea) and <code>ACTIONS.sa_legalDocs</code> — one authoring path, not two."],
+["Super","/super-admin/app-content","Config table, now with edit and delete","Was add-only: a typo in a live banner meant delete-and-recreate, which loses the click history and the <code>published_at</code>. The generic renderer now draws Edit and Delete from <code>config.edit</code>/<code>config.delete</code>, so there is no bespoke component here — what changed is the config and the four seam calls behind it. Three decisions are visible in the form itself: <b>Status is not an edit field</b> (<code>edit.skip</code>) because publish and archive are transition routes that stamp <code>published_at</code> and write their own audit event, and a PATCH-able status box would be a second, quieter way to do the same thing that would not save; the pre-fill comes from <code>forEdit</code> on the raw row, including <code>localWallClock()</code> on the schedule window so an edit cannot drift it by the IST offset; and a cleared box sends <code>null</code> where a create omits the key, so the old subtitle actually goes away. Kind / audience / placement are selects built from <code>config/appContent.js</code>, the one place those five words are written down; <code>placement_slug</code> only appears for a Banner placed at <i>Other</i>."],
+["Super","/super-admin/app-inbox","Config table, with a searchable target","The page had two defects behind one complaint. It never said <em>why the platform's own inbox sits on a super-admin screen</em> — the subtitle now does, with the delivery path (push to each device plus a durable inbox row). And “Target merchant” was a free-text box an operator could only fill by remembering a code. It is a combobox (<code>SearchField</code> in <code>components/ui/blocks.jsx</code>) over the live merchants endpoint: <code>searchRecords</code> pulls <b>one bounded page per search</b> with server-side <code>q</code> — never <code>listRecords</code>, which pages the whole directory to keep tab counts and stat cards honest and would re-fetch thousands of rows per keystroke. Choosing a row stores the merchant <em>code</em> and shows <code>name · code · city · status</code>; the clear option is a labelled broadcast row, because blank here means everyone, not nobody. The list half needed a backend change: <code>merchant_notifications</code> stores only <code>merchant_id</code>, so the admin list now carries <code>merchant_code</code>/<code>merchant_name</code> from a <code>LEFT OUTER JOIN merchants</code> — outer, so broadcasts survive — and until that deploys the panel prints <code>Merchant id 12</code> rather than inventing a name it was not given."],
+["Super","/super-admin/audit-logs","Hand-written + server actions","<code>app/super-admin/audit-logs/actions.js</code> pages the trail server-side (100 rows), reads the action/entity dropdowns from <code>/api/audit/v1/logs/facets</code> for the window being viewed and searches the user directory for the actor filter. Picked dates are IST calendar days converted to their UTC span because <code>created_at</code> is naive UTC. <code>AuditTrail.jsx</code> renders who / when / action / entity / IP and expands each row into fields written, previous value and from → to."],
+["Super","/super-admin/users","Hand-written + server actions","<code>app/super-admin/users/actions.js</code> authorises and calls the backend directly; the list is paged server-side (page size 10). Carries a Two-factor column (<code>mfa_enabled</code> from the list endpoint) and a Reset MFA action: it deletes that administrator's authenticator key and recovery codes and ends every one of their sessions, so the confirm dialog states the cost and the action is refused on your own account with a pointer to Security &amp; MFA."],
+["Super","/super-admin/branches","Hand-written + server actions","Same pattern; the page component calls <code>authorize()</code> before it renders a single row."],
+["Super","/super-admin/app-flags","Hand-written + server actions","The three merchant-app switches. Writes the backend flag store — a prod app bundle then refuses <code>loans=true</code> from any source."],
+["Super","/super-admin/campaigns","Hand-written + server actions","<code>CampaignStudio</code> reads the media list, the audience counts and the provider health from the backend, composes, edits a saved draft, sends, and reports delivery per address. The Medium dropdown is built from <code>GET …/campaigns/channels</code> rather than a list written here, so billing, consent, inbox and artwork rules cannot drift into JSX prose; the reach line counts accounts, recipients and the two shortfalls, and the confirm dialog is worded for the medium the batch will actually travel on. Sends nothing the backend cannot deliver."],
+["Super","/super-admin/partners","Hand-written + server actions","The table used to be a blank <code>ResourcePage</code> with no create button and no word about what a partner is. <code>components/superadmin/PartnerDirectory.jsx</code> opens with <code>PARTNER_EXPLAINER</code> from <code>config/partners.js</code> — a partner is a company the platform routes money through or buys from, and no rail, settlement run or campaign reads this registry yet, so a row documents a relationship rather than starting traffic. <code>actions.js</code> authorises <code>super_admin</code>, rate-limits each operation, and validates before the call: type and status are the eight and four values <code>PartnerType</code>/<code>PartnerStatus</code> accept, a hand-typed code is <code>[A-Za-z0-9._-]{1,40}</code> or blank for a generated one, phone is digits 6–15 after spaces and <code>+</code>/<code>-</code> are stripped. Filtering is server-side (<code>q</code>, <code>partner_type</code>, <code>status</code>, <code>limit</code>/<code>offset</code>), so a 409 from a taken code comes back as a field error on the code box, a 404 on edit says the row is gone, and every row links its own audit history at <code>/super-admin/audit-logs?resource=partner&amp;resourceId=…</code>. Delete is the backend's hard delete, and the confirm dialog says the trail keeps the summary while the contact details go. A legacy row whose type is outside the vocabulary is rendered as “<i>needs a type</i>” and the edit form will not save until one is picked. Dead after the swap: <code>PAGES.partners</code>, <code>RESOURCES.sa_partners</code> and <code>CREATORS.partners</code>; <code>SA_DB.sa_partners</code> stays for the mock build."],
+["Merchant","/merchant-admin/dashboard","Hand-written","<code>getDashboard()</code> + <code>getRecentFeeds()</code>. The transaction-volume and device donuts are commented out in <code>DashboardView.jsx</code> — what renders is categories, top merchants and feeds."],
+["Merchant","/merchant-admin/merchants · /categories · /groups","Config tables","merchants, merchant categories, merchant groups."],
+["Merchant","/merchant-admin/merchants/onboarding · /applications · /onboarding/[id] · /merchants/[id]","Hand-written + tables","Onboarding overview, KYC application queue, application detail (document review, penny drop, approve, reject) and merchant detail. Merchant detail&rsquo;s reject used to post a <i>merchant id</i> at the <i>application</i> reject route, so it 404-ed in both dashboards; it now sends <code>{reason}</code> to <code>POST /api/merchant-admin/v1/merchants/{id}/onboarding/reject</code>, and the same audited document viewer works here."],
+["Merchant","/merchant-admin/transactions · /failed · /refunds","Config tables","transactions, failed transactions, refunds/reversals. Failed-payment rows have no source endpoint — that is why the refund screen, not this one, is the money surface."],
+["Merchant","/merchant-admin/settlements · /payouts · /reconciliation · /reports","Config tables","settlement batches, payouts, reconciliation, settlement reports."],
+["Merchant","/merchant-admin/devices/qr · /pos","Config tables","QR management and POS/soundbox from <code>/api/qr/v1</code> and <code>/api/devices/v1</code>."],
+["Merchant","/merchant-admin/devices/inventory","Config table, no endpoint","Rendered from <code>UNMAPPED.inventory</code>: says there is no stock endpoint. Do not add numbers to it."],
+["Merchant","/merchant-admin/reports/merchants · /transactions · /sales","Config tables","Report files filtered by <code>report_type</code> — one table, three screens."],
+["Merchant","/merchant-admin/staff · /support · /notifications · /settings","Config tables","Merchant staff from <code>/api/identity/v1</code>, tickets, notification inbox, scope-limited settings."],
+["Merchant","/merchant-admin/sales-staff · /new","Honest refusal + server action","Both check the profile is a <code>merchant_admin</code> and otherwise redirect to <code>/login</code>. The list page then prints an amber alert: no staff, territory or document-verification endpoints exist, so the table would show data that does not exist. The create form posts to the same-origin <code>/api/sales-staff</code> handler."],
+["Collection","/collection-admin/dashboard","Hand-written","<code>CollectionDashboard</code> from the collection BFF — queue, aging, promises, agent load."],
+["Collection","/collection-admin/loans/applications · /accounts · /disbursements","Config tables","Loan applications, loan accounts, disbursements — the <code>/api/loans/v1</code> and collection-BFF shapes."],
+["Collection","/collection-admin/borrowers · /borrowers/kyc","Config tables","Borrower book and KYC profiles."],
+["Collection","/collection-admin/emi/schedule · /upcoming","Config tables","Installment schedule and upcoming dues."],
+["Collection","/collection-admin/collections · /followups · /promises","Config tables","Collection queue, follow-ups, repayment promises (with the create forms the BFF supports)."],
+["Collection","/collection-admin/payments · /failed","Config tables","Loan payments and their failures."],
+["Collection","/collection-admin/overdue · /aging","Config tables","Overdue book and bucket aging."],
+["Collection","/collection-admin/agents · /assignments · /performance","Config tables","Collection agents, their assignments and their numbers. Agents are pinned to their own rows server-side."],
+["Collection","/collection-admin/reports/collection · /loans · /reconciliation","Config tables","Report files by type; aliases of one resource."],
+["Collection","/collection-admin/support · /notifications · /settings","Config tables","Same resources as the other dashboards, scoped to <code>collectionAdmin</code> pages."],
+["UPI","/upi-admin/dashboard","Placeholder","<code>&lt;ComingSoon/&gt;</code> cards only. No endpoint, no data, no fake numbers."]
+];
+const POWERS=[
+["Refund decision","approve / reject with a note","live","Merchant Admin → Refunds. The backend applies the money and writes the ledger; the panel shows the outcome."],
+["Maker-checker approval","approve or reject a queued change","live","Super Admin. The panel is the second pair of eyes, never the first pair of hands."],
+["Merchant status","approve, activate, suspend, reject with a reason","live","Both dashboards, one component. The buttons come from <code>MERCHANT_ONBOARDING_NEXT</code>, so the panel offers a transition or stays silent — <code>PATCH /merchants/{id}</code> cannot move lifecycle at all, because <code>MerchantUpdate</code> has no <code>status</code> field. A block that would orphan live money is refused by the backend&rsquo;s state machine (409), not re-implemented here."],
+["Merchant identifier","set a Zaakpay or custom identifier","live","Edit on merchant detail. Not cosmetic: approval 422s without one, and before this pass <code>CREATORS.merchants</code> dropped both fields, so the panel could read an identifier but never write it back."],
+["KYC / document verification","open the document, verify or reject it, penny-drop the bank","live","Application detail. The reviewer now sees the bytes — <code>GET /api/merchant-admin/v1/onboarding/documents/{document_ref}/content</code>, proxied same-origin, inline for images and attached for PDFs, never through <code>display_url()</code> so KYC does not ride a public CDN base, and no-store + nosniff on the way back. Verification sets the backend flag (<code>pan_verified</code> is written by the backend on review), and every open is audited as <code>kyc.document_viewed</code>."],
+["Settlement payout","mark a batch settled / trigger a payout","partial","The panel reads batches and payouts; initiating money out is still the backend's own path, and the settlement payout initiator gap is documented in the backend doc."],
+["Ledger","read journals, postings, merchant subledger","live (read-only)","No money is written from this screen by design."],
+["App content / inbox / flags","edit, delete, publish, schedule, disable","live","Super Admin. Content is a full record now, not an insert: <code>PATCH</code> and <code>DELETE …/content/{ref}</code> are wired, while status still moves only on the publish/archive routes. Schedule window is shown because <code>/content</code> hides a published row outside its window."],
+["Campaign","compose, choose the medium, preview reach, send, edit or delete a draft","live","Super Admin. What a recipient is comes from the medium: a device on push, the phone number on SMS or WhatsApp, the email address on email, and only while marketing consent stands on the last three. Every claim the composer makes about a medium is read from <code>GET /campaigns/channels</code>, and the reach count is requested with the medium in it, so switching from push to SMS moves the number or says why it cannot."],
+["Collection promise / follow-up","create and close","live","Collection Admin via the BFF; the agent cannot open another agent's borrower."],
+["Legal document authoring","write a policy in sentences, preview it, publish a version, archive a superseded one","live","Super Admin → Legal Documents. There is no JSON box anywhere: the studio writes structured sections in the browser or posts the whole document as text and lets <code>content_text</code> be parsed server-side, and the two paths cannot be sent together. <b>A published version is read-only</b> — the studio says so, disables the fields rather than leaving them editable and letting the save fail, and points at &ldquo;copy into a new draft&rdquo;, because that text is what the page served. Publish is disabled while the boxes hold unsaved words, since publish sends the stored row and not the screen."],
+["Two-factor","enrol, verify, disable, replace recovery codes","live","Every role, for itself, on <code>/account/security</code>. The authenticator secret is encrypted with <code>MFA_ENCRYPTION_KEY</code> and the QR is rendered by the backend, so no key crosses a third party."],
+["Two-factor reset","clear another administrator's authenticator","live","Super Admin → Administrators. Destructive by design: key and codes deleted, all their sessions end, and the next sign-in walks them through enrolment."],
+["Partner registry","add, edit, remove a partner row","live","Super Admin → Partners, against <code>/api/partners/v1</code>. This documents the relationship only — no rail, settlement run or campaign reads the table yet, so the screen says so instead of implying that adding an acquirer routes traffic. A removal is the backend's hard delete; the audit event keeps the summary."],
+["Sales staff","create a staff record","mock-free refusal","Refuses to render a table. No backend endpoints exist."],
+["Device inventory","stock list","none","<code>UNMAPPED</code>."]
+];
+const STATES=[
+["live","<code>bg-emerald-500</code>","Recent successes. Real traffic, real vendor.","Send normally."],
+["degraded","<code>bg-amber-500</code>","Both outcomes recently. Working, unreliable.","Send, expect retries."],
+["down","<code>bg-red-500</code>","Recent failures with no newer success.","<b>Parked in the queue</b>, not lost."],
+["idle","<code>bg-yellow-400</code>","Configured and capable, no recent traffic.","Send. Idle is not a claim of health."],
+["unconfigured","<code>bg-slate-400</code>","Credentials missing.","<b>Parked.</b> No attempt is pretended."],
+["disabled","<code>bg-slate-300</code>","The stub is wired instead of a vendor.","Held, does not block traffic. This is what a <code>stub</code> deployment looks like here."]
+];
+const ENVS=[
+["NEXT_PUBLIC_API_BASE_URL","Base URL of the FastAPI backend. Default <code>http://localhost:8000</code>; production must be <code>https://api.smarthubpay.com</code>. Baked at build."],
+["NEXT_PUBLIC_USE_MOCKS","<code>true</code> turns the entire panel back into demo data. Any other value — or unset — means real API. If it is ever true in a deployed build, every screen is fiction. Baked at build."],
+["NODE_ENV","Only read to decide <code>secure</code> on the session cookies."]];
+const NSENTRIES=[
+["/api/collection-admin/v1",10,"Role-scoped BFF for the collection book","live"],
+["/api/settlement/v1",4,"Batches, payouts, reconciliation, reports","live"],
+["/api/merchants/v1",3,"Merchant CRUD, outlets, categories, groups","live"],
+["/api/identity/v1",3,"Login, /me, admin users, staff lists, MFA (status, self-service enrol/enable/disable, recovery codes) and the sign-in-door enrolment pair, password reset","live"],
+["/api/super-admin/v1",2,"Platform aggregates and ops endpoints","live"],
+["/api/payments/v1",2,"Global transaction and refund lists","live"],
+["/api/merchant-admin/v1",2,"Merchant-admin BFF as a table resource. The reviewer surface — applications list and detail, onboarding steps, document review, document content — is called from <code>app/super-admin/*/actions.js</code> and <code>components/merchants/MerchantDetail.jsx</code> through <code>serverApi</code>, so it does not appear in this count.","live"],
+["/api/audit/v1",2,"Audit trail","live"],
+["/api/branches/v1",1,"Branch CRUD","live"],
+["/api/consent/v1",1,"Legal consent records","live"],
+["/api/devices/v1",1,"Paired POS/soundbox devices — not stock","live"],
+["/api/kyc/v1",1,"KYC profiles","live"],
+["/api/ledger/v1",1,"Journals, postings, subledgers","live"],
+["/api/legal/v1",1,"Versioned legal documents","live"],
+["/api/loans/v1",1,"Loan accounts, installments, disbursements","live"],
+["/api/notifications/v1",1,"Inbox, health, queue drain","live"],
+["/api/partners/v1",1,"Partner registry — list/create plus get/patch/delete by code","live"],
+["/api/qr/v1",1,"QR records","live"],
+["/api/reports/v1",1,"Report files by type","live"],
+["/api/risk/v1",1,"Rules, scorecards, velocity","live"],
+["/api/settings/v1",1,"Tenant settings — one endpoint, three scopes","live"],
+["/api/support/v1",1,"Tickets and messages","live"]
+];
+const STALE=[
+["README.md","\"No backend, database or real auth.\"","Completely false today. Real backend login, httpOnly session rotation, 23 namespaces consumed. <b>The most misleading line in the repo.</b>"],
+["config/tableMap.js","\"Map UI resources to Supabase tables/columns\"","Nothing reads it for data any more; table names are the backend's. Supabase vocabulary left in a live file."],
+["config/dashboards/*.js","<code>user = { name: 'Amit Sharma', role: 'Super Admin' }</code>","A demo identity, but only as the <i>fallback</i> in each role layout when <code>getCurrentProfile()</code> returns null. Reachable only if middleware and layout disagree — worth deleting so a stranger is never shown a fake name."],
+["services/mock/index.js","Full fake dataset","Excluded from a real build by the seam, so harmless there; catastrophic if <code>NEXT_PUBLIC_USE_MOCKS=true</code> gets baked in. Keep it, and keep it out of every build script."],
+[".next/","Compiled output in the tree","Built with <code>https://api.smarthubpay.com</code> inlined. Proof of a correct bake, and a stale artefact that must never be shipped as-is."],
+["middleware.js","Looks like an auth wall","It is a routing hint — no signature verification. Documented in its own comment; do not add a security assumption to it."],
+["supabase/migrations/001_core.sql","A schema","For a database this panel no longer talks to."],
+["Git history","Implies work landed 2026-10-29","92 files of the backend re-point, campaigns, health strip, MFA, audit, partners, the super-admin merchant screens and the app-content/inbox pass are uncommitted."],
+["data/pages/index.js","\"Add superAdmin / upiAdmin / collectionAdmin page configs here when built\"","Two of the three are long since built; the comment still reads like a TODO."],
+["This file","Its own counts","Every number here was re-derived from the working tree on 2026-11-08 with the commands in the footer. Three passes moved them, and each move means something: <i>pages via ResourcePage</i> fell 53 → 52 → 51 and <i>page-key configs</i> with it, which is the merchants table leaving the generic renderer and then the legal-documents config leaving it too — a count going down is the honest signal that a screen stopped pretending. <i>server-action files</i> rose 12 → 13 and <i>js/jsx</i> 177 → 180 for the studio. The screen map and the powers table describe super-admin as of this pass; if a later change re-points a screen, re-derive rather than nudging a date."]
+];
+const FILES=[
+["package.json","stack, four scripts, no test runner","authoritative"],
+["middleware.js","edge routing for /login, /account and the four role prefixes","live, and deliberately not a security layer"],
+["config/api.js","API base URL, mock switch, the three cookie names","authoritative"],
+["config/auth.js","ROLES, ROLE_LABELS, EXTRA_ACCESS, SHARED_PREFIX, canAccessPath, isApiConfigured","authoritative"],
+["config/dashboards/*.js","nav + brand per role, demo user fallback","live, one stale fallback"],
+["data/pages/*.js","51 page configs: columns, filters, stats, forms, dangerous actions — <b>down from 53</b>: the merchants table left the generic renderer with the directory, and the legal-documents config left with the studio, so no second authoring path for the same document survives","the place a table screen is defined"],
+["services/index.js","the seam: 32 exports, mock-or-API choice","authoritative"],
+["services/api/resources.js","34 resources + UNMAPPED","the place an endpoint is defined"],
+["services/api/index.js","implementations, paging, dashboards, campaign/health calls","authoritative"],
+["services/mock/index.js","demo data","build-gated"],
+["lib/api/core.js + browser.js + server.js + tokens.js","one client, two token stores, decode helpers","authoritative"],
+["lib/auth/session.js + backend.js + getRole.js","profile re-check, authorize(), OAuth2 form login, MFA","authoritative"],
+["components/ResourcePage.jsx","the generic table/tabs/filters/form/CSV renderer — and, since the app-content pass, the generic <b>Edit</b> and <b>Delete</b> driven entirely by <code>config.edit</code>/<code>config.delete</code>","authoritative"],
+["components/ui/blocks.jsx","the shared field controls, including <code>SearchField</code>: the debounced combobox (<code>role=combobox</code>/<code>listbox</code>, arrow keys, Escape, blur-close) that turns a “which record?” box into a remote pick over a real endpoint","live"],
+["components/layout/*","AdminLayout, Sidebar, Topbar, sign-out","live"],
+["components/superadmin/ServiceHealth.jsx","six-state health strip + shared hook","live"],
+["components/superadmin/CampaignStudio.jsx","composer: medium dropdown and its rules read from <code>GET /campaigns/channels</code>, audience counted per medium, resumable send, delivery log with masked addresses","live"],
+["components/superadmin/LegalDocumentStudio.jsx","the legal document studio: version list with search and two filters, the section editor (paragraph and bullet rows, subsections, closing note, move/delete), the Paste-plain-English tab that posts <code>content_text</code> and lets the server&rsquo;s parser structure it, a preview that mirrors the landing pages&rsquo; markup, and lifecycle controls that refuse to pretend — a published version opens read-only with the fields disabled, Publish waits for an unsaved-word discard, and switching versions asks before throwing typed text away","live"],
+["config/legalDocuments.js","the document types with the landing page each one renders, the status labels and tones, the marker legend copied from the parser, the field limits copied from the schema, and <code>toEditor</code>/<code>toWire</code>/<code>validateDraft</code> between them","authoritative for this screen"],
+["app/super-admin/legal-documents/actions.js","<code>'use server'</code>: list, save (create without <code>version</code>, PATCH a draft), convert pasted text, publish, archive, delete — each followed by <code>revalidatePath</code>, and <code>effective_from</code> sent as an ISO date because the column is a <code>Date</code>","live"],
+["app/*/actions.js","13 server-action files that bypass the seam on purpose","live"],
+["components/superadmin/PartnerDirectory.jsx","partner registry screen: explainer, server-side filters, typed CRUD form, per-row audit link","live"],
+["components/superadmin/MerchantDirectory.jsx","super-admin merchant list with the transitions the backend permits as buttons; replaces the read-only <code>PAGES.merchants</code> table","live"],
+["components/superadmin/ApplicationQueue.jsx","application queue: server-side search, status chips, PAN/bank checks read from the row, per-row decision trail","live"],
+["components/merchants/MerchantDetail.jsx","one merchant screen for both dashboards — the paths arrive as props so the super-admin copy is not a fork","live"],
+["config/appContent.js","the app-content vocabulary in one place: kinds, audiences, the status labels, and the placement label ⇄ slug maps the merchant app matches on. Form, edit pre-fill and row all read it, so the same five words cannot drift into three lists.","authoritative for these two screens"],
+["config/onboarding.js","the four status vocabularies and <code>MERCHANT_ONBOARDING_NEXT</code>, the panel-side mirror of the backend&rsquo;s <code>ONBOARDING_TRANSITIONS</code>","authoritative for these two screens"],
+["app/api/kyc-document/[ref]/route.js","same-origin proxy that puts the bearer on the KYC bytes request an <code>&lt;img&gt;</code> cannot","live"],
+["app/api/session/refresh/route.js","cookie-holding rotation proxy","live"],
+["app/auth/confirm/route.js","reset-link forwarder","live"],
+["next.config.js / tailwind.config.js / jsconfig.json","build, palette, @ aliases","live"]
+];
+const $=s=>document.querySelector(s),el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const badge=s=>`<span class="badge b-${({live:'live',partial:'partial',stub:'mock',none:'stale'})[s]||'unv'}">${s}</span>`;
+const secs=[...document.querySelectorAll("main section")];
+secs.forEach(s=>{const a=el("a","",s.querySelector("h2").textContent);a.setAttribute("href","#"+s.id);$("#toc").appendChild(a)});
+const links=[...$("#toc").children];
+const spy=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+e.target.id))}),{rootMargin:"-100px 0px -70% 0px"});
+secs.forEach(s=>spy.observe(s));
+$("#roleTable").innerHTML="<thead><tr><th>Role</th><th>Prefix</th><th>Home</th><th>State</th><th>Table screens</th><th>Screens</th><th>What it owns</th></tr></thead>"+ROLES.map(r=>`<tr><td><b>${r[0]}</b></td><td class="mono">${r[1]}</td><td class="mono">${r[2]}</td><td>${badge(r[3])}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td></tr>`).join("");
+$("#screenTable").innerHTML="<thead><tr><th>Area</th><th>Route</th><th>How it renders</th><th>Data</th></tr></thead>"+SCREENS.map(r=>`<tr><td>${r[0]}</td><td class="mono">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("");
+$("#powerTable").innerHTML="<thead><tr><th>Surface</th><th>What the button does</th><th>Status</th><th>Notes</th></tr></thead>"+POWERS.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${badge(r[2])}</td><td>${r[3]}</td></tr>`).join("");
+$("#stateTable").innerHTML="<thead><tr><th>Backend state</th><th>Dot</th><th>Meaning</th><th>What happens to traffic</th></tr></thead>"+STATES.map(r=>`<tr><td class="mono">${r[0]}</td><td class="mono">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("");
+$("#envTable").innerHTML="<thead><tr><th>Name</th><th>What the code does with it</th></tr></thead>"+ENVS.map(r=>`<tr><td class="mono">${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+$("#nsTable").innerHTML="<thead><tr><th>Namespace</th><th>References</th><th>Used for</th><th>Status</th></tr></thead>"+NSENTRIES.map(r=>`<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${badge(r[3])}</td></tr>`).join("");
+$("#staleTable").innerHTML="<thead><tr><th>Where</th><th>What it says</th><th>What is true</th></tr></thead>"+STALE.map(r=>`<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("");
+$("#filesTable").innerHTML="<thead><tr><th>File</th><th>Purpose</th><th>State</th></tr></thead>"+FILES.map(f=>`<tr><td class="mono">${f[0]}</td><td>${f[1]}</td><td>${f[2]}</td></tr>`).join("");
+$("#search").addEventListener("input",e=>{const q=e.target.value.trim().toLowerCase();
+ document.querySelectorAll("main section > *").forEach(n=>{if(n.tagName==="H2")return;
+ n.classList.toggle("hide",!!q&&!n.textContent.toLowerCase().includes(q))})});
+</script>
+</body>
+</html>

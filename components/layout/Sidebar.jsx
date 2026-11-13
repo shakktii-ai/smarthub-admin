@@ -2,11 +2,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { ChevronDown, LayoutDashboard, Store, Users, QrCode, ArrowLeftRight, Landmark, FileText, LifeBuoy, Bell, Settings, Headphones, X, HandCoins, CalendarClock, Wallet, AlertTriangle, UserCog, BarChart3, Banknote, Building2Icon, FileSearch } from 'lucide-react';
+import { ChevronDown, LayoutDashboard, Store, Users, QrCode, ArrowLeftRight, Landmark, FileText, LifeBuoy, Bell, Settings, Headphones, X, HandCoins, CalendarClock, Wallet, AlertTriangle, UserCog, BarChart3, Banknote, Building2Icon, FileSearch, Megaphone, ShieldCheck, ClipboardCheck } from 'lucide-react';
 import { cx } from '@/components/ui';
 import Image from 'next/image';
 
-const ICONS = { LayoutDashboard, Store, Users, QrCode, ArrowLeftRight, Landmark, FileText, LifeBuoy, Bell, Settings, HandCoins, CalendarClock, Wallet, AlertTriangle, UserCog, BarChart3, Banknote, Building2Icon, FileSearch };
+const ICONS = { LayoutDashboard, Store, Users, QrCode, ArrowLeftRight, Landmark, FileText, LifeBuoy, Bell, Settings, HandCoins, CalendarClock, Wallet, AlertTriangle, UserCog, BarChart3, Banknote, Building2Icon, FileSearch, Megaphone, ShieldCheck, ClipboardCheck };
 
 export default function Sidebar({ base, brand, nav, open, onClose }) {
   const path = usePathname();

@@ -293,3 +293,84 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* =========================================
+   SHARED DASHBOARD POLISH (every admin section)
+   The entrance/motion language introduced by the
+   merchant admin dashboard, promoted to globals so
+   super-admin, collection and all list pages share it.
+   ========================================= */
+
+@keyframes shp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.shp-rise {
+  animation: shp-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes shp-bar {
+  from {
+    width: 0;
+  }
+}
+
+.shp-bar {
+  animation: shp-bar 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes shp-pop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.shp-pop {
+  animation: shp-pop 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shp-rise,
+  .shp-bar,
+  .shp-pop {
+    animation: none;
+  }
+}
+
+/* Slender custom scrollbars inside dense dashboard panels */
+.shp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #c9d6ea transparent;
+}
+
+.shp-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.shp-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.shp-scroll::-webkit-scrollbar-thumb {
+  background: #c9d6ea;
+  border-radius: 8px;
+}
+
+.shp-scroll::-webkit-scrollbar-thumb:hover {
+  background: #2f6fed;
+}

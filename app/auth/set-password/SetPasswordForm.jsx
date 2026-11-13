@@ -8,11 +8,12 @@ function Submit() {
   return <button type="submit" disabled={pending} className="w-full rounded-lg bg-navy px-3.5 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">{pending ? 'Saving…' : 'Set password'}</button>;
 }
 
-export default function SetPasswordForm() {
+export default function SetPasswordForm({ token }) {
   const [state, action] = useFormState(setPassword, {});
   return (
     <div className="grid min-h-screen place-items-center bg-slate-100 p-6">
       <form action={action} className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg">
+        <input type="hidden" name="token" value={token} />
         <h1 className="text-xl font-bold">Set your password</h1>
         <p className="mb-4 text-sm text-slate-500">At least 10 characters, with upper case, lower case and a number.</p>
         {state?.error && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-600">{state.error}</p>}

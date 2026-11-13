@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
-// Target of the invitation and password-recovery emails. Verifies the one-time token, creates the session,
-// then sends the user to the set-password page. See README for the required email templates.
+// Target of the password-recovery email. The backend's reset flow is token-based (POST
+// /password/forgot returns a token, POST /password/reset consumes it) and does not create a
+// session, so this only forwards the token to the set-password page. Validation happens when the
+// token is actually consumed.
 const safeNext = (n) => (n && n.startsWith('/') && !n.startsWith('//') ? n : '/auth/set-password');
 
 export async function GET(req) {
   const url = new URL(req.url);
-  const tokenHash = url.searchParams.get('token_hash'); const type = url.searchParams.get('type'); const code = url.searchParams.get('code');
-  const sb = createClient(); let error = null;
-  if (tokenHash && type) ({ error } = await sb.auth.verifyOtp({ token_hash: tokenHash, type }));
-  else if (code) ({ error } = await sb.auth.exchangeCodeForSession(code));
-  else error = new Error('missing token');
-  if (error) return NextResponse.redirect(new URL('/login?error=link', url.origin));
-  return NextResponse.redirect(new URL(safeNext(url.searchParams.get('next')), url.origin));
+  const token = url.searchParams.get('token') || url.searchParams.get('token_hash');
+  if (!token) return NextResponse.redirect(new URL('/login?error=link', url.origin));
+  const target = safeNext(url.searchParams.get('next'));
+  const sep = target.includes('?') ? '&' : '?';
+  return NextResponse.redirect(new URL(`${target}${sep}token=${encodeURIComponent(token)}`, url.origin));
 }

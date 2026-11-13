@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, ShieldCheck, FileText, CalendarDays } from "lucide-react";
+import { getPublishedLegalDocument } from "@/lib/legal";
 
 const sections = [
   {
@@ -247,7 +248,11 @@ const sections = [
 
 ];
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  // A published document from the legal service replaces the copy below; until an admin
+  // publishes one, the page keeps rendering the text shipped with it.
+  const published = await getPublishedLegalDocument("terms_and_conditions");
+  const content = published ? published.content : sections;
   return (
     <main className="min-h-screen bg-[#f4f8fd] text-slate-700">
       {/* Header */}
@@ -261,7 +266,7 @@ export default function TermsPage() {
            
 
             <h1 className="text-3xl font-semibold tracking-tight text-[#102c55] sm:text-4xl lg:text-4xl">
-              Terms &amp; Conditions
+              {published?.title || "Terms & Conditions"}
             </h1>
 
            
@@ -283,9 +288,9 @@ export default function TermsPage() {
               </p>
 
               <nav className="mt-4 max-h-[65vh] space-y-1 overflow-y-auto pr-1">
-                {sections.map((section, index) => (
+                {content.map((section, index) => (
                   <a
-                    key={section.title}
+                    key={index}
                     href={`#section-${index + 1}`}
                     className="block rounded-lg px-3 py-2 text-xs leading-5 text-slate-600 transition hover:bg-blue-50 hover:text-[#0878d1] sm:text-sm"
                   >
@@ -300,9 +305,9 @@ export default function TermsPage() {
           <div className="min-w-0 space-y-5">
           
 
-            {sections.map((section, index) => (
+            {content.map((section, index) => (
               <article
-                key={section.title}
+                key={index}
                 id={`section-${index + 1}`}
                 className="scroll-mt-28 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_20px_-14px_rgba(15,39,73,0.18)] sm:p-7 lg:p-8"
               >
@@ -313,6 +318,32 @@ export default function TermsPage() {
                 <div className="mt-4 space-y-4 text-sm leading-7 text-slate-600 sm:text-[15px] sm:leading-8">
                   {section.paragraphs?.map((paragraph, paragraphIndex) => (
                     <p key={paragraphIndex}>{paragraph}</p>
+                  ))}
+
+                  {/* The legal schema carries subsections for every document type,
+                      and the studio writes and previews them for both, so this page
+                      has to lay them out too - otherwise a titled list an operator
+                      authored simply is not on the page they published. */}
+                  {(section.subsections || []).map((subsection, subsectionIndex) => (
+                    <div
+                      key={subsectionIndex}
+                      className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5"
+                    >
+                      <h3 className="font-semibold text-[#102c55]">{subsection.title}</h3>
+                      {(subsection.paragraphs || []).map((paragraph, pi) => (
+                        <p key={pi} className="mt-3">
+                          {paragraph}
+                        </p>
+                      ))}
+                      <ul className="mt-3 space-y-2">
+                        {(subsection.bullets || []).map((item, bi) => (
+                          <li key={bi} className="flex items-start gap-3">
+                            <span className="mt-[11px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#0878d1]" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))}
 
                   {section.bullets && (

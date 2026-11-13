@@ -1,5 +1,6 @@
-// Maps this app to the Supabase schema. Authentication is always real Supabase Auth: there is no demo login.
-export const AUTH = { profileTable: 'profiles', roleColumn: 'role', activeColumn: 'is_active' };
+// Maps this app to the FastAPI backend. Authentication is a real backend session: there is no demo login.
+import { API_BASE_URL } from './api';
+
 export const ROLES = {
   super_admin: { home: '/super-admin/dashboard', prefix: '/super-admin' },
   merchant_admin: { home: '/merchant-admin/dashboard', prefix: '/merchant-admin' },
@@ -9,5 +10,12 @@ export const ROLES = {
 export const ROLE_LABELS = { super_admin: 'Super Admin', merchant_admin: 'Merchant Admin', collection_admin: 'Collection Admin', upi_admin: 'UPI Admin' };
 // Explicit extra dashboards a role may open WITHOUT changing its role. Empty by default (strict).
 export const EXTRA_ACCESS = { super_admin: [] };
-export const isSupabaseConfigured = () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-export const canAccessPath = (role, path) => [ROLES[role].prefix, ...(EXTRA_ACCESS[role] || [])].some((p) => path === p || path.startsWith(`${p}/`));
+// Every signed-in role owns its own security settings, so this is not a dashboard: it is the
+// account itself. Keeping it outside the role prefixes means one screen for all four roles
+// instead of four copies that drift apart.
+export const SHARED_PREFIX = '/account';
+export const canAccessPath = (role, path) => path === SHARED_PREFIX || path.startsWith(`${SHARED_PREFIX}/`)
+  || [ROLES[role].prefix, ...(EXTRA_ACCESS[role] || [])].some((p) => path === p || path.startsWith(`${p}/`));
+
+// Guards against a malformed base URL rather than an absent one: localhost:8000 is the default.
+export const isApiConfigured = () => /^https?:\/\/[^\s]+$/i.test(API_BASE_URL);

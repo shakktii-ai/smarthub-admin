@@ -5,7 +5,7 @@ import Topbar from './Topbar';
 import { signOut } from '@/app/login/actions';
 
 // Reusable shell. Access control is enforced server-side in middleware.js, not here.
-export default function AdminLayout({ base, brand, nav, user, searchPlaceholder = 'Search merchants, transactions, devices, staff...', children }) {
+export default function AdminLayout({ base, brand, nav, user, searchPlaceholder = 'Search merchants, transactions, devices...', children }) {
   const [open, setOpen] = useState(false);
   return (
     <>

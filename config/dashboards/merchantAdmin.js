@@ -11,7 +11,11 @@ export const nav = [
     { label: 'KYC Applications', href: '/merchant-admin/merchants/onboarding/applications' },
     { label: 'Merchant Categories', href: '/merchant-admin/merchants/categories' },
     { label: 'Merchant Groups', href: '/merchant-admin/merchants/groups' } ] },
-  { label: 'Sales Staff', icon: 'Users', children: [{ label: 'All Sales Staff', href: '/merchant-admin/sales-staff' }, { label: 'Add Sales Staff', href: '/merchant-admin/sales-staff/new' }] },
+  { label: 'Sales Staff', icon: 'Users', children: [
+    { label: 'All Sales Staff', href: '/merchant-admin/sales-staff' },
+    { label: 'Add Sales Staff', href: '/merchant-admin/sales-staff/new' },
+    { label: 'Territories', href: '/merchant-admin/sales-staff/territories' },
+    { label: 'Staff Documents', href: '/merchant-admin/sales-staff/documents' } ] },
   { label: 'QR & Devices', icon: 'QrCode', children: [
     { label: 'QR Management', href: '/merchant-admin/devices/qr' },
     { label: 'POS / Soundbox', href: '/merchant-admin/devices/pos' },
@@ -30,6 +34,7 @@ export const nav = [
     { label: 'Transaction Reports', href: '/merchant-admin/reports/transactions' },
     { label: 'Sales Reports', href: '/merchant-admin/reports/sales' } ] },
   { label: 'Support & Disputes', href: '/merchant-admin/support', icon: 'LifeBuoy' },
-  { label: 'Notifications', href: '/merchant-admin/notifications', icon: 'Bell', badge: 3 },
+  { label: 'Notifications', href: '/merchant-admin/notifications', icon: 'Bell' },
   { label: 'Settings', href: '/merchant-admin/settings', icon: 'Settings' },
+  { label: 'Security & MFA', href: '/account/security', icon: 'ShieldCheck' },
 ];

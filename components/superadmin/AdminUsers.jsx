@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   ConfirmDialog,
+  cx,
   EmptyState,
   Pagination,
 } from '@/components/ui';
@@ -16,6 +17,7 @@ import { FormModal } from '@/components/ui/blocks';
 import { useApp } from '@/components/ui/AppContext';
 import {
   inviteAdmin,
+  resetAdminMfa,
   setAdminAccess,
 } from '@/app/super-admin/users/actions';
 
@@ -43,11 +45,11 @@ export default function AdminUsers({ data, page, pageSize }) {
   const [add, setAdd] = useState(false);
   const [block, setBlock] = useState(null);
   const [unblock, setUnblock] = useState(null);
+  const [mfaReset, setMfaReset] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const rows = data?.rows || [];
   const total = data?.total || 0;
-  const managers = data?.managers || [];
   const branches = data?.branches || [];
 
   const setParam = (key, value) => {
@@ -95,12 +97,6 @@ export default function AdminUsers({ data, page, pageSize }) {
         `${branch.name} (${branch.code})` === values.branch
     );
 
-    const selectedManager = managers.find(
-      (manager) =>
-        manager.id === values.manager ||
-        manager.full_name === values.manager
-    );
-
     let result;
     try {
       result = await inviteAdmin({
@@ -110,7 +106,6 @@ export default function AdminUsers({ data, page, pageSize }) {
         mobile: values.mobile,
         role,
         branchId: selectedBranch?.id || '',
-        reportingManagerId: selectedManager?.id || '',
       });
     } catch (error) {
       console.error('Administrator creation failed:', error);
@@ -159,11 +154,30 @@ export default function AdminUsers({ data, page, pageSize }) {
     }
   };
 
+  const resetMfa = async (id) => {
+    setBusy(true);
+
+    try {
+      const result = await resetAdminMfa(id);
+
+      if (result.ok) {
+        toast('Authenticator reset.');
+        toast(result.warning, 'error');
+        setMfaReset(null);
+        router.refresh();
+      } else {
+        toast(result.error || 'Could not reset the authenticator.', 'error');
+      }
+    } catch {
+      toast('Something went wrong. Please try again.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const branchOptions = branches.map(
   (branch) => `${branch.name} (${branch.code})`
 );
-
-  const managerOptions = managers.map((manager) => manager.full_name);
 
   return (
     <>
@@ -173,6 +187,8 @@ export default function AdminUsers({ data, page, pageSize }) {
           <p className="text-sm text-slate-600">
             Invite administrators and control their dashboard access.
             Passwords are set by each administrator from the invitation email.
+            The two-factor column is their own setting — you can only clear it, and clearing it
+            signs them out everywhere.
           </p>
         </div>
 
@@ -255,6 +271,7 @@ export default function AdminUsers({ data, page, pageSize }) {
                     'Role',
                     'Branch',
                     'Status',
+                    'Two-factor',
                     'Created By',
                     'Created At',
                     'Last Sign-in',
@@ -274,7 +291,7 @@ export default function AdminUsers({ data, page, pageSize }) {
                 {rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-t border-slate-100"
+                    className="border-t border-slate-100 cursor-pointer"
                   >
                     <td className="whitespace-nowrap px-3 py-2.5 font-medium">
                       {row.full_name || '-'}
@@ -313,6 +330,24 @@ export default function AdminUsers({ data, page, pageSize }) {
                     </td>
 
                     <td className="whitespace-nowrap px-3 py-2.5">
+                      <span
+                        title={
+                          row.mfa_enabled
+                            ? 'This administrator signs in with an authenticator app.'
+                            : 'Password only. Enabling the platform policy would require them to enrol at their next sign-in.'
+                        }
+                        className={cx(
+                          'inline-block whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium',
+                          row.mfa_enabled
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-slate-100 text-slate-600',
+                        )}
+                      >
+                        {row.mfa_enabled ? 'On' : 'Off'}
+                      </span>
+                    </td>
+
+                    <td className="whitespace-nowrap px-3 py-2.5">
                       {row.creator?.full_name || '-'}
                     </td>
 
@@ -325,24 +360,38 @@ export default function AdminUsers({ data, page, pageSize }) {
                     </td>
 
                     <td className="whitespace-nowrap px-3 py-2.5">
-                      {row.role !== 'super_admin' &&
-                        (row.is_active ? (
+                      <div className="flex gap-2">
+                        {row.role !== 'super_admin' &&
+                          (row.is_active ? (
+                            <Button
+                              variant="outline"
+                              className="!px-2 !py-1"
+                              onClick={() => setBlock(row)}
+                            >
+                              Block
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              className="!px-2 !py-1"
+                              onClick={() => setUnblock(row)}
+                            >
+                              Reactivate
+                            </Button>
+                          ))}
+
+                        {/* Only someone with an authenticator can lose one; the button is
+                            withheld otherwise so the list never offers a no-op. */}
+                        {row.mfa_enabled && (
                           <Button
                             variant="outline"
                             className="!px-2 !py-1"
-                            onClick={() => setBlock(row)}
+                            onClick={() => setMfaReset(row)}
                           >
-                            Block
+                            Reset MFA
                           </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            className="!px-2 !py-1"
-                            onClick={() => setUnblock(row)}
-                          >
-                            Reactivate
-                          </Button>
-                        ))}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -412,12 +461,6 @@ export default function AdminUsers({ data, page, pageSize }) {
               pattern: /^[6-9]\d{9}$/,
               message: '10 digits starting 6-9',
             },
-            {
-              name: 'manager',
-              label: 'Reporting Manager',
-              type: 'select',
-              options: managerOptions,
-            },
           ]}
         />
       )}
@@ -446,6 +489,18 @@ export default function AdminUsers({ data, page, pageSize }) {
           busy={busy}
           onConfirm={() => access(unblock.id, true)}
           onCancel={() => setUnblock(null)}
+        />
+      )}
+
+      {mfaReset && (
+        <ConfirmDialog
+          title={`Reset two-factor for ${mfaReset.full_name}?`}
+          message="Their authenticator key and every recovery code are deleted, and all their live sessions end. On the next sign-in they enrol a new authenticator from scratch — there is no way to undo this or to read the old codes back."
+          confirmLabel="Reset authenticator"
+          danger
+          busy={busy}
+          onConfirm={() => resetMfa(mfaReset.id)}
+          onCancel={() => setMfaReset(null)}
         />
       )}
     </>

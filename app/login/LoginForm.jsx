@@ -22,6 +22,15 @@ import {
 import { Field, inputCls } from '@/components/ui';
 import { requestPasswordReset, signIn } from './actions';
 
+function downloadCodes(codes) {
+  const url = URL.createObjectURL(new Blob([`${codes.join('\n')}\n`], { type: 'text/plain' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'smarthubpay-recovery-codes.txt';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function Submit() {
   const { pending } = useFormStatus();
 
@@ -107,6 +116,10 @@ export default function LoginForm({ notice }) {
   const [busy, setBusy] = useState(false);
  const router = useRouter();
   const error = state?.error || notice;
+  const mfaStep = Boolean(state?.mfaRequired);
+  // The platform policy refused this sign-in because the account has no authenticator.
+  const enrollStep = Boolean(state?.enroll);
+  const enrolled = state?.enrolled || null;
 
   const forgot = async () => {
     if (!email.trim()) {
@@ -126,6 +139,67 @@ export default function LoginForm({ notice }) {
       setBusy(false);
     }
   };
+
+  if (enrolled) {
+    // Signed in already - the session is written. This screen exists only because recovery codes
+    // are sent once, and landing on the dashboard would discard the only copy.
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#eff4fb] px-5 py-10">
+        <div className="w-full max-w-[470px] rounded-2xl border border-white/80 bg-white/95 p-6 shadow-[0_24px_80px_-25px_rgba(15,39,73,0.22)] sm:p-9">
+          <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-emerald-700">
+            <ShieldCheck size={17} aria-hidden />
+            Authenticator enrolled
+          </p>
+          <h2 className="text-xl font-extrabold tracking-tight text-[#102c55]">
+            Save these recovery codes before you continue
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            Each one works once, if you lose the device. This is the only time they are shown.
+          </p>
+
+          <div className="my-5 grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-sm sm:grid-cols-3">
+            {enrolled.recoveryCodes.map((code) => (
+              <span key={code} className="whitespace-nowrap">
+                {code}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => downloadCodes(enrolled.recoveryCodes)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#102c55] hover:bg-blue-50"
+            >
+              Download .txt
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                navigator.clipboard.writeText(enrolled.recoveryCodes.join('\n'))
+              }
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#102c55] hover:bg-blue-50"
+            >
+              Copy
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push(enrolled.home)}
+              className="ml-auto rounded-xl bg-[#102c55] px-4 py-3 text-sm font-semibold text-white hover:bg-[#17417a]"
+            >
+              Continue to dashboard
+            </button>
+          </div>
+
+          <p className="mt-4 text-xs leading-5 text-slate-500">
+            Do not refresh this page: the codes are stored only as hashes, so nobody - including a
+            Super Admin - can read this set back. You can always issue a fresh one later from
+            Security &amp; MFA.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#eff4fb] ">
@@ -239,12 +313,13 @@ export default function LoginForm({ notice }) {
               </p> */}
 
               <h2 className="text-md font-extrabold tracking-tight text-[#102c55] sm:text-[34px]">
-                Welcome back
+                {enrollStep ? 'One more step' : 'Welcome back'}
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">
-                Sign in with your official work email to continue to
-                your assigned dashboard.
+                {enrollStep
+                  ? 'Confirm the code your authenticator is showing to open your dashboard.'
+                  : 'Sign in with your official work email to continue to your assigned dashboard.'}
               </p>
             </div>
 
@@ -255,6 +330,44 @@ export default function LoginForm({ notice }) {
               >
                 {error}
               </p>
+            )}
+
+            {enrollStep && (
+              <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                <p className="text-sm font-semibold text-[#102c55]">
+                  Your dashboard requires an authenticator before it will open
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">
+                  The password was correct — this platform insists every administrator also has a
+                  second factor, and your account did not have one yet. Scan the code below with
+                  Google Authenticator, Authy or 1Password, then type the 6 digits it shows. The key
+                  is stored only in encrypted form: a Super Admin can clear it, but nobody can read
+                  it back.
+                </p>
+
+                <div className="mt-3 flex flex-wrap items-start gap-4">
+                  <img
+                    src={`data:image/svg+xml,${encodeURIComponent(state.enroll.qrSvg || '')}`}
+                    alt={`QR code for ${state.enroll.account || email}`}
+                    width={168}
+                    height={168}
+                    className="h-[168px] w-[168px] shrink-0 rounded-lg border border-blue-200 bg-white p-2"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Or enter this key by hand
+                    </p>
+                    <p className="mt-1 break-all rounded-lg border border-blue-200 bg-white p-2 font-mono text-sm tracking-[0.12em] text-[#102c55]">
+                      {state.enroll.secret}
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-slate-600">
+                      {state.enroll.expiresInSeconds
+                        ? `This challenge expires in ${Math.round(state.enroll.expiresInSeconds / 60)} minutes. If it runs out, sign in again - a new key is issued and the old one stops working.`
+                        : 'If this challenge runs out, sign in again; a new key is issued.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             <div className="space-y-5">
@@ -279,38 +392,68 @@ export default function LoginForm({ notice }) {
                 </span>
               </Field>
 
-              <Field label="Password">
-                <span className="relative block">
-                  <LockKeyhole
-                    size={18}
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
+              {!mfaStep && !enrollStep && (
+                <Field label="Password">
+                  <span className="relative block">
+                    <LockKeyhole
+                      size={18}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
 
-                  <input
-                    name="password"
-                    type={show ? 'text' : 'password'}
-                    required
-                    minLength={6}
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    className={`${inputCls} h-[52px] rounded-xl border-slate-200 bg-white pl-11 pr-12 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100`}
-                  />
+                    <input
+                      name="password"
+                      type={show ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      autoComplete="current-password"
+                      placeholder="Enter your password"
+                      className={`${inputCls} h-[52px] rounded-xl border-slate-200 bg-white pl-11 pr-12 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100`}
+                    />
 
-                  <button
-                    type="button"
-                    aria-label={show ? 'Hide password' : 'Show password'}
-                    aria-pressed={show}
-                    onClick={() => setShow((value) => !value)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 transition hover:text-[#102c55] focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  >
-                    {show ? <EyeOff size={19} /> : <Eye size={19} />}
-                  </button>
-                </span>
-              </Field>
+                    <button
+                      type="button"
+                      aria-label={show ? 'Hide password' : 'Show password'}
+                      aria-pressed={show}
+                      onClick={() => setShow((value) => !value)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 transition hover:text-[#102c55] focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    >
+                      {show ? <EyeOff size={19} /> : <Eye size={19} />}
+                    </button>
+                  </span>
+                </Field>
+              )}
+
+              {(mfaStep || enrollStep) && (
+                <Field
+                  label={mfaStep ? 'Authenticator or recovery code' : 'Authenticator code'}
+                  hint={mfaStep ? 'Lost the device? A recovery code looks like ABCDE-12345 and works once.' : undefined}
+                >
+                  <span className="relative block">
+                    <ShieldCheck
+                      size={18}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+
+                    <input
+                      name="code"
+                      type="text"
+                      inputMode={mfaStep ? 'text' : 'numeric'}
+                      pattern="(\d{6}|[0-9A-Za-z]{5}-?[0-9A-Za-z]{5})"
+                      maxLength={12}
+                      required
+                      autoFocus
+                      autoComplete="one-time-code"
+                      placeholder={mfaStep ? '6-digit code or recovery code' : '6-digit code'}
+                      className={`${inputCls} h-[52px] rounded-xl border-slate-200 bg-white pl-11 text-sm tracking-[0.3em] focus:border-blue-500 focus:ring-4 focus:ring-blue-100`}
+                    />
+                  </span>
+                </Field>
+              )}
             </div>
 
-            <div className="mt-3 flex justify-end">
+            <div className={`mt-3 flex justify-end${mfaStep || enrollStep ? ' hidden' : ''}`}>
               <button
                 type="button"
                 disabled={busy}

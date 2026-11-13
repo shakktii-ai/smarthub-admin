@@ -98,44 +98,34 @@ export async function createBranch(formData) {
       });
     }
 
-    const { data, error } = await auth.admin.rpc(
-      'create_branch_with_territories',
-      {
-        p_name: name,
-        p_code: code,
-        p_city: city,
-        p_address: address || null,
-        p_territories: cleanedTerritories,
-      }
-    );
+    let created;
+    try {
+      created = await auth.api.post('/api/branches/v1', {
+        branch_code: code,
+        name,
+        branch_type: 'branch',
+        city,
+        address: address || undefined,
+      });
+    } catch (error) {
+      console.error('Create branch failed:', error.status, error.message);
 
-    if (error) {
-      console.error('Create branch failed:', error.code, error.message);
-
-      if (error.code === '23505') {
-        return {
-          success: false,
-          message:
-            'A branch code or territory name already exists. Check existing records.',
-        };
+      if (error.status === 409) {
+        return { success: false, message: 'That branch code already exists.' };
       }
 
-      return {
-        success: false,
-        message:
-          error.message?.includes('Territory') ||
-          error.message?.includes('territory')
-            ? error.message
-            : 'Unable to create branch and territories. No partial records were saved.',
-      };
+      return { success: false, message: error.message || 'Unable to create the branch.' };
     }
 
     revalidatePath('/super-admin/branches');
 
     return {
       success: true,
-      message: `Branch created successfully with ${data.territory_count} territories.`,
-      branch: data.branch,
+      // The backend has no territory API, so the list is validated but deliberately not persisted.
+      message: cleanedTerritories.length
+        ? `Branch created. ${cleanedTerritories.length} territories were not saved: the backend has no territory API.`
+        : 'Branch created successfully.',
+      branch: created,
     };
   } catch (error) {
     console.error('Create branch action failed:', error);

@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import { getPublishedLegalDocument } from "@/lib/legal";
 
 export const metadata = {
   title: "Privacy Policy | SmartHub Pay",
@@ -202,7 +203,11 @@ const sections = [
   },
 ];
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  // A published document from the legal service replaces the copy below; until an admin
+  // publishes one, the page keeps rendering the text shipped with it.
+  const published = await getPublishedLegalDocument("privacy_policy");
+  const content = published ? published.content : sections;
   return (
     <main className="min-h-screen bg-[#f4f8fd] text-slate-700">
       {/* Page heading */}
@@ -214,7 +219,7 @@ export default function PrivacyPolicyPage() {
            
 
             <h1 className="text-3xl font-semibold tracking-tight text-[#102c55] sm:text-4xl lg:text-4xl">
-              Privacy Policy
+              {published?.title || "Privacy Policy"}
             </h1>
 
 
@@ -244,9 +249,9 @@ export default function PrivacyPolicyPage() {
               </p>
 
               <nav className="mt-4 max-h-[65vh] space-y-1 overflow-y-auto pr-1">
-                {sections.map((section, index) => (
+                {content.map((section, index) => (
                   <a
-                    key={section.title}
+                    key={index}
                     href={`#privacy-${index + 1}`}
                     className="block rounded-lg px-3 py-2 text-xs leading-5 text-slate-600 transition hover:bg-blue-50 hover:text-[#0878d1] sm:text-sm"
                   >
@@ -261,9 +266,9 @@ export default function PrivacyPolicyPage() {
           <div className="min-w-0 space-y-5">
             
 
-            {sections.map((section, index) => (
+            {content.map((section, index) => (
               <article
-                key={section.title}
+                key={index}
                 id={`privacy-${index + 1}`}
                 className="scroll-mt-32 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_20px_-14px_rgba(15,39,73,0.18)] sm:p-7 lg:p-8"
               >
@@ -276,17 +281,22 @@ export default function PrivacyPolicyPage() {
                     <p key={paragraphIndex}>{paragraph}</p>
                   ))}
 
-                  {section.subsections?.map((subsection) => (
+                  {(section.subsections || []).map((subsection, subsectionIndex) => (
                     <div
-                      key={subsection.title}
+                      key={subsectionIndex}
                       className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5"
                     >
                       <h3 className="font-semibold text-[#102c55]">
                         {subsection.title}
                       </h3>
+                      {(subsection.paragraphs || []).map((paragraph, pi) => (
+                        <p key={pi} className="mt-3">
+                          {paragraph}
+                        </p>
+                      ))}
                       <ul className="mt-3 space-y-2">
-                        {subsection.bullets.map((item) => (
-                          <li key={item} className="flex items-start gap-3">
+                        {(subsection.bullets || []).map((item, bi) => (
+                          <li key={bi} className="flex items-start gap-3">
                             <span className="mt-[11px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#0878d1]" />
                             <span>{item}</span>
                           </li>
@@ -297,8 +307,8 @@ export default function PrivacyPolicyPage() {
 
                   {section.bullets && (
                     <ul className="space-y-2.5 pl-1">
-                      {section.bullets.map((item) => (
-                        <li key={item} className="flex items-start gap-3">
+                      {section.bullets.map((item, bulletIndex) => (
+                        <li key={bulletIndex} className="flex items-start gap-3">
                           <span className="mt-[11px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#0878d1]" />
                           <span>{item}</span>
                         </li>
