@@ -152,13 +152,7 @@ export function StatCard({ label, value, delta, up = true, color = 'blue', icon:
             {up ? <TrendingUp size={12} aria-hidden /> : <TrendingDown size={12} aria-hidden />}
             {delta}
           </span>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400">
-            <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" style={{ background: t.spark }} /><span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: t.spark }} /></span>
-            live
-          </span>
-        )}
-        <div className="w-24 shrink-0"><Spark color={t.spark} seed={i} /></div>
+        ) : null}
       </div>
     </div>
   );
@@ -172,7 +166,7 @@ const tones = {
   purple: 'bg-violet-50 text-violet-700 ring-violet-600/10',
   gray: 'bg-slate-100 text-slate-600 ring-slate-500/10',
 };
-const map = { Success: 'green', 'Pending KYC': 'amber', Suspended: 'red', Accepted: 'green', Published: 'green', Balanced: 'green', Pending: 'amber', Due: 'amber', Paid: 'green', Overdue: 'red', Upcoming: 'blue', 'High Risk': 'red', Medium: 'amber', Low: 'green', Scheduled: 'blue', Missed: 'red', Kept: 'green', Broken: 'red', NPA: 'red', Closed: 'gray', 'Pending Documents': 'amber', Disbursed: 'green', Promised: 'blue', Escalated: 'red', Reassigned: 'gray', 'Action Needed': 'red', Monitor: 'amber', Verified: 'green', Valid: 'green', Uploaded: 'blue', Invalid: 'red', 'Re-upload': 'amber', Draft: 'gray', Completed: 'green', Active: 'green', Approved: 'green', Online: 'green', Paid: 'green', Resolved: 'green', Read: 'gray', Deployed: 'green', Failed: 'red', Rejected: 'red', Offline: 'red', Exception: 'red', Open: 'red', Unread: 'blue', Refunded: 'purple', Returned: 'purple', 'Under Review': 'amber', 'KYC Pending': 'amber', 'In Review': 'amber', 'On Leave': 'amber', 'In Stock': 'blue', 'Document Review': 'blue', 'Bank Verification': 'blue', 'In Progress': 'blue', P1: 'red', P2: 'amber', P3: 'blue', P4: 'gray', High: 'red', Critical: 'red', Acknowledged: 'amber', Dismissed: 'gray', Inactive: 'gray' };
+const map = { Success: 'green', 'Pending KYC': 'amber', Suspended: 'red', Accepted: 'green', Published: 'green', Balanced: 'green', Pending: 'amber', Due: 'amber', Paid: 'green', Overdue: 'red', Upcoming: 'blue', 'High Risk': 'red', Medium: 'amber', Low: 'green', Scheduled: 'blue', Missed: 'red', Kept: 'green', Broken: 'red', NPA: 'red', Closed: 'gray', 'Pending Documents': 'amber', Disbursed: 'green', Promised: 'blue', Escalated: 'red', Reassigned: 'gray', 'Action Needed': 'red', Monitor: 'amber', Verified: 'green', Valid: 'green', Uploaded: 'blue', Invalid: 'red', 'Re-upload': 'amber', Draft: 'gray', Completed: 'green', Active: 'green', Approved: 'green', Online: 'green', Paid: 'green', Resolved: 'green', Read: 'gray', 'Expired': 'red', 'Live now': 'green', 'Scheduled': 'blue', 'Archived': 'gray', Deployed: 'green', Failed: 'red', Rejected: 'red', Offline: 'red', Exception: 'red', Open: 'red', Unread: 'blue', Refunded: 'purple', Returned: 'purple', 'Under Review': 'amber', 'KYC Pending': 'amber', 'In Review': 'amber', 'On Leave': 'amber', 'In Stock': 'blue', 'Document Review': 'blue', 'Bank Verification': 'blue', 'In Progress': 'blue', P1: 'red', P2: 'amber', P3: 'blue', P4: 'gray', High: 'red', Critical: 'red', Acknowledged: 'amber', Dismissed: 'gray', Inactive: 'gray' };
 export function Badge({ value }) { return <span className={cx('inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset', tones[map[value] || 'gray'])}>{value}</span>; }
 
 export function Button({ variant = 'primary', className = '', ...p }) {

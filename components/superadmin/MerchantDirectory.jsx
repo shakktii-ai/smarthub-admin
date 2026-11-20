@@ -268,7 +268,7 @@ export default function MerchantDirectory({ data, page, pageSize }) {
                                   kind: 'approve',
                                   row,
                                   message:
-                    `POST /api/merchants/v1/${row.id}/approve makes this merchant Active so it can accept payments. ` +
+                    'Approving makes this merchant Active so it can accept payments. ' +
                     'It is refused without a Zaakpay or custom identifier, and the decision is written to the audit trail.',
                                 });
                               }}
@@ -310,7 +310,7 @@ export default function MerchantDirectory({ data, page, pageSize }) {
                                   row,
                                   step,
                                   label,
-                                  message: `POST /api/merchants/v1/${row.id}/onboarding/${step} moves the onboarding state and is audited against ${row.id}.`,
+                                  message: 'Moving this onboarding step advances the review state and it is audited against the merchant.',
                                 });
                               }}
                             >

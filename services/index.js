@@ -18,7 +18,6 @@ export const getApplication = async (...a) => (await impl()).getApplication(...a
 export const addApplication = async (...a) => (await impl()).addApplication(...a);
 export const verifyDocument = async (...a) => (await impl()).verifyDocument(...a);
 export const verifyBank = async (...a) => (await impl()).verifyBank(...a);
-export const runPennyDrop = async (...a) => (await impl()).runPennyDrop(...a);
 export const approveApplication = async (...a) => (await impl()).approveApplication(...a);
 export const startApplicationReview = async (...a) => (await impl()).startApplicationReview(...a);
 export const rejectApplication = async (...a) => (await impl()).rejectApplication(...a);

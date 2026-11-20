@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { ArrowLeft, ArrowRight, CheckCircle2, CreditCard, FileText, Loader2, Shield, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, CreditCard, FileText, Loader2, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, Field, inputCls, cx, Spinner } from '@/components/ui';
 import { SearchField } from '@/components/ui/blocks';
@@ -13,23 +13,20 @@ const steps = [
   { label: 'Borrower', icon: Users, description: 'Identify the borrower and capture KYC identity details.' },
   { label: 'Loan', icon: CreditCard, description: 'Choose an active product and calculate the repayment schedule.' },
   { label: 'Documents', icon: FileText, description: 'Upload the borrower documents an officer will verify by hand.' },
-  { label: 'Autopay', icon: Shield, description: 'Record a future collection request, or arrange it later.' },
   { label: 'Review', icon: CheckCircle2, description: 'Review everything, then submit the application for manual KYC and approval.' },
 ];
 const fieldSteps = {
   merchant: 0, customerRef: 0, loanRef: 0, name: 0, phone: 0, email: 0, kycRef: 0, address: 0, aadhaar: 0, pan: 0,
   product: 1, amount: 1, tenure: 1, rate: 1, firstDue: 1, preview: 1,
   documents: 2,
-  rail: 3, amountType: 3, collectionAmount: 3, startDate: 3, endDate: 3, consentRef: 3,
-  confirmed: 4,
+  confirmed: 3,
 };
 const loanFields = new Set(['product', 'amount', 'tenure', 'rate', 'firstDue']);
 const initialValues = {
   merchant: '', customerRef: '', loanRef: '', loanRefMode: 'auto', name: '', phone: '', email: '', kycRef: '',
   address: '', aadhaar: '', pan: '',
   product: '', amount: '', tenure: '', rate: '', firstDue: '',
-  rail: 'later', amountType: 'maximum', collectionAmount: '', startDate: '', endDate: '',
-  consentRef: '', confirmed: false,
+  confirmed: false,
 };
 
 // The document kinds the backend accepts. At least one is required; the rest are optional but
@@ -296,7 +293,6 @@ export default function NewLoanApplication() {
       requiredText('name', 'Customer name', 255);
       if (!/^[6-9]\d{9}$/.test(values.phone.trim())) result.phone = 'Phone must contain 10 digits starting with 6, 7, 8 or 9.';
       if (values.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) result.email = 'Enter a valid email address, or leave it blank.';
-      if (values.rail !== 'later' && !values.email.trim()) result.email = 'Customer email is required when a collection request is present.';
       requiredText('address', 'Borrower address', 500);
       if (!/^[2-9]\d{11}$/.test(aadhaarTrim)) result.aadhaar = 'Aadhaar must be 12 digits starting with 2–9.';
       if (!/^[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}$/.test(values.pan.trim())) result.pan = 'PAN must be 10 characters, e.g. ABCDE1234F.';
@@ -323,22 +319,7 @@ export default function NewLoanApplication() {
     if (index === 2) {
       if (uploadedDocs.length === 0) result.documents = 'Upload at least one borrower document for manual KYC verification.';
     }
-    if (index === 3) {
-      if (!['later', 'upi', 'nach'].includes(values.rail)) result.rail = 'Choose a collection preference.';
-      if (values.rail !== 'later') {
-        if (!['fixed', 'maximum'].includes(values.amountType)) result.amountType = 'Choose fixed or maximum collection amount.';
-        const collectionAmount = hundredths(values.collectionAmount);
-        if (collectionAmount === null || collectionAmount <= 0) result.collectionAmount = 'Enter a positive collection amount in INR with at most 2 decimal places, within the safe paise limit.';
-        else if (highestInstallment !== null && collectionAmount < highestInstallment) result.collectionAmount = `Collection amount must cover the highest scheduled installment: ${money(highestInstallment)}, including final rounding.`;
-        if (!currentPreview) result.preview = 'Return to Loan and calculate the current schedule to check collection coverage.';
-        if (!validDate(values.startDate)) result.startDate = 'Choose a valid collection start date.';
-        else if (values.startDate < todayDate() || values.startDate > values.firstDue) result.startDate = 'Collection must start today or later, and no later than the first EMI date.';
-        if (!validDate(values.endDate)) result.endDate = 'Choose a valid collection end date.';
-        else if (lastDue && values.endDate < lastDue) result.endDate = `Collection must end on or after the last installment (${lastDue}).`;
-        requiredText('consentRef', 'Consent evidence reference', 100);
-      }
-    }
-    if (index === 4 && !values.confirmed) result.confirmed = 'Confirm that the application details are accurate before submitting.';
+    if (index === 3 && !values.confirmed) result.confirmed = 'Confirm that the application details are accurate before submitting.';
     return result;
   }
 
@@ -377,7 +358,7 @@ export default function NewLoanApplication() {
     if (submissionBusy.current || calculationBusy.current) return;
     const nextErrors = validateStep(step);
     setErrors(nextErrors);
-    if (!Object.keys(nextErrors).length) setStep(Math.min(step + 1, 4));
+    if (!Object.keys(nextErrors).length) setStep(Math.min(step + 1, steps.length - 1));
   }
 
   function previous() {
@@ -423,15 +404,6 @@ export default function NewLoanApplication() {
               file_name: doc.file_name,
               content_type: doc.content_type,
             })),
-            collection: values.rail === 'later' ? null : {
-              rail: values.rail,
-              amount_type: values.amountType,
-              amount_paise: hundredths(values.collectionAmount),
-              frequency: 'monthly',
-              start_date: values.startDate,
-              end_date: values.endDate,
-              consent_reference: values.consentRef.trim(),
-            },
             details_confirmed: true,
           },
         };
@@ -470,7 +442,6 @@ export default function NewLoanApplication() {
   }
 
   const fieldError = name => errors[name] ? <span id={`application-${name}-error`}>{errors[name]}</span> : undefined;
-  const collectionLabel = values.rail === 'upi' ? 'UPI AutoPay requested' : values.rail === 'nach' ? 'NACH / e-NACH requested' : 'Set up later';
   const StepIcon = steps[step].icon;
   const hasErrors = Object.keys(errors).length > 0 || previewError || submitError;
   const phoneValid = /^[6-9]\d{9}$/.test(values.phone.trim());
@@ -543,13 +514,13 @@ export default function NewLoanApplication() {
         }}><ArrowLeft size={16} aria-hidden /> Applications</Button>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">New Loan Application</h1>
-          <p className="mt-1 text-sm text-slate-500">Capture the borrower, KYC documents and autopay request, then submit for review. An administrator verifies KYC and disburses manually — no money moves here.</p>
+          <p className="mt-1 text-sm text-slate-500">Capture the borrower and loan details, then submit for review. An administrator verifies KYC, approves and disburses — AutoPay is set up afterwards, via the collect app.</p>
         </div>
       </div>
 
       <Card>
         <nav aria-label="Application progress">
-          <ol className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+          <ol className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {steps.map((item, index) => (
               <li key={item.label} aria-current={index === step ? 'step' : undefined} className="flex items-center gap-2">
                 <span className={cx('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold', index < step ? 'bg-emerald-50 text-emerald-700' : index === step ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-500')}>
@@ -564,15 +535,15 @@ export default function NewLoanApplication() {
       </Card>
 
       <Card>
-        <form noValidate aria-busy={submitting} onSubmit={event => { event.preventDefault(); if (step === 4) submit(); else next(); }}>
+        <form noValidate aria-busy={submitting} onSubmit={event => { event.preventDefault(); if (step === steps.length - 1) submit(); else next(); }}>
           <fieldset disabled={submitting} className="min-w-0 space-y-6">
             <legend className="sr-only">New loan application</legend>
             <div className="flex items-start gap-3 border-b border-slate-100 pb-5">
               <span className="rounded-xl bg-blue-50 p-2.5 text-brand"><StepIcon size={21} aria-hidden /></span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Step {step + 1} of 5</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Step {step + 1} of {steps.length}</p>
                 <h2 ref={headingRef} tabIndex={-1} className="mt-1 text-lg font-bold text-slate-900 focus:outline-none">{steps[step].label}</h2>
-                <p className="mt-1 text-sm text-slate-500">{steps[step].description} {step < 4 && 'Fields marked * are required.'}</p>
+                <p className="mt-1 text-sm text-slate-500">{steps[step].description} {step < steps.length - 1 && 'Fields marked * are required.'}</p>
               </div>
             </div>
 
@@ -593,7 +564,7 @@ export default function NewLoanApplication() {
                 <div className="grid gap-x-5 gap-y-1 sm:grid-cols-2">
                   <Field label="Customer full name *" error={fieldError('name')}><input {...control('name')} required maxLength={255} autoComplete="name" placeholder="Full legal name" /></Field>
                   <Field label="Customer phone *" error={fieldError('phone')} hint="10 digits, starting with 6–9; no country code."><input {...control('phone')} required type="tel" inputMode="numeric" maxLength={10} autoComplete="tel-national" placeholder="9876543210" /></Field>
-                  <Field label={values.rail !== 'later' ? 'Customer email *' : 'Customer email (optional)'} error={fieldError('email')}><input {...control('email')} type="email" autoComplete="email" placeholder="customer@example.com" /></Field>
+                  <Field label="Customer email (optional)" error={fieldError('email')}><input {...control('email')} type="email" autoComplete="email" placeholder="customer@example.com" /></Field>
                   <Field label="Merchant (optional)" error={fieldError('merchant')} hint="Search existing merchants. Leave blank for an individual borrower.">
                     <SearchField field={{ label: 'Merchant', search: merchantSearch }} value={values.merchant} onValue={val => changeValue('merchant', val)} />
                   </Field>
@@ -695,43 +666,6 @@ export default function NewLoanApplication() {
 
             {step === 3 && (
               <div className="space-y-5">
-                <fieldset id="application-rail" tabIndex={-1} aria-describedby={errors.rail ? 'application-rail-error' : undefined}>
-                  <legend className="mb-3 text-sm font-semibold text-slate-700">Collection preference *</legend>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {[
-                      ['later', 'Set up later', 'No collection request saved.'],
-                      ['upi', 'UPI AutoPay', 'Save an enrollment request.'],
-                      ['nach', 'NACH / e-NACH', 'Partner enrollment required.'],
-                    ].map(([value, label, description]) => (
-                      <label key={value} className={cx('flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition', values.rail === value ? 'border-brand bg-blue-50/60 ring-1 ring-brand' : 'border-slate-200 hover:bg-slate-50')}>
-                        <input id={`application-rail-${value}`} type="radio" name="collection-rail" value={value} checked={values.rail === value} onChange={() => changeValue('rail', value)} disabled={submitting} className="mt-1 accent-blue-600" />
-                        <span><span className="block text-sm font-bold text-slate-800">{label}</span><span className="mt-1 block text-xs font-normal text-slate-500">{description}</span></span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.rail && <p id="application-rail-error" className="mt-2 text-xs text-red-600">{errors.rail}</p>}
-                </fieldset>
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-900">
-                  <p className="font-semibold">A saved collection request is not an active mandate.</p>
-                  <p className="mt-1">Customer authorization must happen later through the provider’s secure process. Bank authorization, UMRN and UPI mandate references are provider-issued later. Never enter a PIN, OTP or raw bank account number here. NACH enrollment requires partner integration.</p>
-                </div>
-                {values.rail !== 'later' && <>
-                  {currentPreview && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">Request an amount of at least <strong>{money(highestInstallment)}</strong> to cover the highest scheduled installment, including final rounding. This requirement applies to both fixed and maximum amounts; it does not authorize a debit or guarantee collection.</p>}
-                  <div className="grid gap-x-5 gap-y-1 sm:grid-cols-2">
-                    <Field label="Amount type *" error={fieldError('amountType')}><select {...control('amountType')} required><option value="maximum">Maximum amount</option><option value="fixed">Fixed amount</option></select></Field>
-                    <Field label="Requested collection amount (INR) *" error={fieldError('collectionAmount')}><input {...control('collectionAmount')} required inputMode="decimal" placeholder="5000.00" /></Field>
-                    <Field label="Collection frequency" hint="Only monthly collection is supported for this loan schedule."><input id="application-frequency" aria-label="Collection frequency" className={cx(inputCls, 'bg-slate-50 text-slate-500')} value="Monthly" readOnly /></Field>
-                    <Field label="Consent evidence reference *" error={fieldError('consentRef')} hint="Reference existing customer consent evidence; not a PIN, OTP or mandate identifier."><input {...control('consentRef')} required maxLength={100} autoComplete="off" placeholder="Consent case / evidence reference" /></Field>
-                    <Field label="Collection start date *" error={fieldError('startDate')} hint={`Today or later, and no later than first EMI: ${values.firstDue}.`}><input {...control('startDate')} required type="date" min={today} max={values.firstDue} /></Field>
-                    <Field label="Collection end date *" error={fieldError('endDate')} hint={`Must cover the last installment: ${lastDue}.`}><input {...control('endDate')} required type="date" min={lastDue} /></Field>
-                  </div>
-                </>}
-                {values.rail === 'later' && <p className="text-sm text-slate-600">No collection details or consent reference will be submitted. Arrange customer authorization and collection enrollment separately before collections begin.</p>}
-              </div>
-            )}
-
-            {step === 4 && (
-              <div className="space-y-5">
                 <ReviewSection title="Borrower and identity" entries={[
                   ['Customer full name', values.name.trim()], ['Customer phone', values.phone.trim()],
                   ['Customer email', values.email.trim()], ['Merchant', values.merchant.trim() || 'Individual borrower (no merchant)'],
@@ -765,15 +699,7 @@ export default function NewLoanApplication() {
                     })}
                   </ul>
                 </section>
-                <ReviewSection title="Autopay / collection request" entries={[
-                  ['Preference', collectionLabel],
-                  ...(values.rail === 'later' ? [] : [
-                    ['Amount type', values.amountType === 'fixed' ? 'Fixed' : 'Maximum'],
-                    ['Requested amount', money(hundredths(values.collectionAmount))], ['Frequency', 'Monthly'],
-                    ['Start date', values.startDate], ['End date', values.endDate], ['Consent evidence reference', values.consentRef.trim()],
-                  ]),
-                ]} />
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-900">Submitting sends this application for manual KYC verification and review only. An administrator verifies the documents, approves, then disburses manually — by cash or directly to the borrower’s account. This form does not disburse money, authorize debits or create an active mandate. Any collection request needs later customer authorization and provider enrollment; NACH / e-NACH requires partner integration.</div>
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-900">Submitting sends this application for manual KYC verification and review only. An administrator verifies the documents, approves, then disburses manually — by cash or directly to the borrower’s account. AutoPay is set up after approval, during or after disbursement, via the collect app; no mandate is created or authorized by this form.</div>
                 <Field label="Details confirmation *" error={fieldError('confirmed')}>
                   <span className="mt-2 flex items-start gap-3 rounded-xl border border-slate-200 p-4">
                     <input id="application-confirmed" type="checkbox" checked={values.confirmed} onChange={event => changeValue('confirmed', event.target.checked)} disabled={submitting} required aria-invalid={Boolean(errors.confirmed)} aria-describedby={errors.confirmed ? 'application-confirmed-error' : undefined} className="mt-0.5 h-4 w-4 shrink-0 accent-blue-600" />
@@ -785,7 +711,7 @@ export default function NewLoanApplication() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
               <Button variant="outline" disabled={step === 0 || submitting} onClick={previous}><ArrowLeft size={16} aria-hidden /> Previous</Button>
-              {step < 4 ? <Button type="submit" disabled={submitting || calculating}>Next: {steps[step + 1].label} <ArrowRight size={16} aria-hidden /></Button> : (
+              {step < steps.length - 1 ? <Button type="submit" disabled={submitting || calculating}>Next: {steps[step + 1].label} <ArrowRight size={16} aria-hidden /></Button> : (
                 <Button type="submit" disabled={submitting} className="bg-gradient-to-b from-[#1E9E6A] to-[#168A5A]">
                   {submitting && <Loader2 size={16} className="animate-spin" aria-hidden />}
                   {submitting ? 'Submitting application…' : submitError ? 'Retry submission' : 'Submit for review'}

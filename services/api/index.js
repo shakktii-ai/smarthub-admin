@@ -590,9 +590,13 @@ export async function updateRecord(resource, id, values) {
   const body = Object.fromEntries(
     Object.entries(EDITORS[resource](values)).filter(([, v]) => v !== undefined),
   );
+  // cfg.updateQuery (e.g. settings' ?scope=merchant) narrows WHICH stored row a
+  // PATCH touches. Without it the backend defaults to the system scope and a
+  // merchant-scoped edit silently mutates the wrong key.
   const patched = await api.patch(
     `${cfg.path}/${encodeURIComponent(id)}`,
     body,
+    cfg.updateQuery,
   );
   bustFetchCache(resource);
   return cfg.row(patched);
@@ -607,7 +611,9 @@ export async function deleteRecord(resource, id) {
     );
   }
   // 204 with no body: the caller reloads the list, which is the only truth about the row.
-  await api.del(`${cfg.path}/${encodeURIComponent(id)}`);
+  // cfg.deleteQuery (e.g. settings' ?scope=merchant) targets the delete at the
+  // same scope the edit used; without it the backend deletes the system key.
+  await api.del(`${cfg.path}/${encodeURIComponent(id)}`, cfg.deleteQuery);
   bustFetchCache(resource);
   return true;
 }
@@ -848,12 +854,61 @@ const ACTIONS = {
       run: (id) => api.post(`/api/super-admin/v1/content/${encodeURIComponent(id)}/archive`),
     },
   ],
+  // Refund retry + maker-checker decision (D15). Reconcile/refresh are page-level
+  // (single endpoints, no per-row id) and are wired as create-ish actions below
+  // only where the backend exposes a per-refund route.
+  refunds: [
+    {
+      when: (r, a) => a.verb === "retry",
+      run: (id) => api.post(`/api/payments/v1/refunds/${encodeURIComponent(id)}/retry`),
+    },
+    {
+      when: (r, a) => a.verb === "decision",
+      run: (id, a) =>
+        api.post(`/api/payments/v1/refunds/${encodeURIComponent(id)}/decision`, {
+          checker_id: currentUserId(),
+          approve: a.approve === "Approve",
+          note: a.note || undefined,
+        }),
+    },
+  ],
 };
 // The applications and disbursements lists are the same loan rows, so they share the transitions.
 ACTIONS.c_applications = ACTIONS.c_loans;
 ACTIONS.c_disb = ACTIONS.c_loans;
 // The collection support queue is the same ticket list, so it shares its status route.
 ACTIONS.c_tickets = ACTIONS.tickets;
+// The collection reconciliation page is the same settlement recon resource under an alias
+// (resources.js), so it shares the ingest create and the match verb.
+ACTIONS.c_agents = [
+  {
+    when: (r, a) => Boolean(a.setStatus),
+    run: (id, a) =>
+      api.post(`/api/identity/v1/users/${encodeURIComponent(id)}/status`, {
+        status: delabelize(a.setStatus),
+      }),
+  },
+];
+// EMI rows carry the collection account behind the loan (D10), so the schedule
+// and upcoming-EMI pages can record a receipt inline. The default amount is
+// this installment's unpaid balance — NOT the account's whole outstanding,
+// which the dashboard's Collect button falls back to.
+ACTIONS.c_emi = [
+  {
+    when: (r, a) => a.verb === "collect",
+    run: (id, a, row) => {
+      const raw = row?.raw || {};
+      const remaining = Math.max(0, Number(raw.total_paise) - Number(raw.paid_paise || 0));
+      // An empty amount box means "this EMI's balance", not "everything outstanding".
+      const amount = a.amount === "" || a.amount == null ? remaining / 100 : a.amount;
+      return collectEmi(a.account || row?.account, {
+        amount,
+        method: a.method || "Cash",
+        reference: a.reference,
+      });
+    },
+  },
+];
 
 export async function performAction(resource, id, action = {}, row = null) {
   const cfg = RESOURCES[resource];
@@ -1366,9 +1421,9 @@ export async function getCollectionDashboard() {
     .sort((a, b) => (a.iso < b.iso ? 1 : -1))
     .slice(0, 5)
     .map((r) => ({ ...r, status: "Collected" }));
-  // EMIs due today or earlier and still unpaid. The installment queue is keyed by loan
-  // reference and does not expose the collection account behind that loan, so these rows are
-  // read here and collected from the account screen.
+  // EMIs due today or earlier and still unpaid. Rows carry `account` (the
+  // collection account ref joined backend-side), so these can be collected
+  // directly; rows without an account fall back to the collections screen.
   const now = today();
   const dueToday = emi
     .filter((e) => e.iso <= now && e.status !== "Paid")

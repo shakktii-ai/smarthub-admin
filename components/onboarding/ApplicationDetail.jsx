@@ -49,7 +49,7 @@ export default function ApplicationDetail({
       {tab === 'Documents' && <DocsTab a={a} closed={closed || busy} onReview={(doc, status, note) => run(() => verifyDocument(id, { ...doc, remarks: note }, status), `${doc.name} ${status.toLowerCase()}`)} />}
       {tab === 'Bank Verification' && <BankTab a={a} busy={closed || busy} onVerify={() => run(() => verifyBank(id), 'Bank details verified')} />}
       {tab === 'Business Details' && <Card title="Business Information"><Row k="Legal Name" v={a.legalName} /><Row k="Trade Name" v={a.merchant} /><Row k="Owner" v={a.owner} /><Row k="Entity Type" v={a.raw?.business_type} /><Row k="Product Type" v={a.raw?.product_type} /><Row k="PAN" v={a.pan} /><Row k="GSTIN" v={a.gstin} /><Row k="Address" v={a.raw?.address} /><Row k="City / State" v={[a.raw?.city, a.raw?.state].filter(Boolean).join(', ')} /><Row k="Pincode" v={a.raw?.pincode} /><Row k="Merchant Code" v={a.raw?.merchant_code} /></Card>}
-      {modal === 'approve' && <ConfirmDialog title="Approve merchant" message={`POST /api/merchant-admin/v1/onboarding/applications/${id}/approve creates the merchant, links the applicant as owner and moves the application to Approved.`} confirmLabel="Approve" busy={busy} onConfirm={() => run(() => approveApplication(id), 'Application approved')} onCancel={() => setModal(null)} />}
+      {modal === 'approve' && <ConfirmDialog title="Approve merchant" message="Approving creates the merchant account, links the applicant as owner, and moves this application to Approved. This cannot be undone." confirmLabel="Approve" busy={busy} onConfirm={() => run(() => approveApplication(id), 'Application approved')} onCancel={() => setModal(null)} />}
       {modal === 'reject' && <RejectModal busy={busy} onClose={() => setModal(null)} onSubmit={(r, m) => run(() => rejectApplication(id, r, m), 'Application rejected')} />}
     </>
   );
@@ -74,7 +74,7 @@ function DocsTab({ a, closed, onReview }) {
       <Card title="Uploaded Documents"><ul className="space-y-1">{a.documents.map((x, k) => <li key={x.documentRef}><button onClick={() => { setI(k); setNote(''); setEr(''); }} className={cx('flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm', k === i ? 'bg-blue-50' : 'hover:bg-slate-50')}><span><b className="block">{x.name}</b><span className="text-xs text-slate-500">{x.fileName || x.fileKey}</span></span><Badge value={x.status} /></button></li>)}</ul><p className="mt-3 text-xs text-slate-500">Pick a document to look at it before deciding. Every open is written to the audit trail against this reference.</p></Card>
       <Preview doc={d} />
       <Card title="Review">
-        <p className="text-sm text-slate-600">POST /api/merchant-admin/v1/onboarding/documents/{d.documentRef}/review records the outcome and notifies the applicant.</p>
+        <p className="text-sm text-slate-600">Recording the outcome notifies the applicant; the last outcome and any note stay on the record.</p>
         <Field label={d.status === 'Verified' ? 'Review note' : 'Review note (required to reject)'}><textarea rows={3} className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} placeholder="For example: PAN is legible and the name matches the application." /></Field>
         {er && <p role="alert" className="mt-1 text-xs text-red-600">{er}</p>}
         {d.remarks && <p className="mt-1 text-xs text-slate-500">Previous note: {d.remarks}</p>}

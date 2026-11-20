@@ -143,6 +143,18 @@ export const PAGES = {
       ["Outstanding", rupee(sumBy(d, "outstanding"))],
       ["This Month", plain(countWhere(d, (r) => r.iso >= monthStart()))],
     ],
+    actions: [
+      {
+        label: "Disburse",
+        verb: "disburse",
+        when: (r) => r.status === "Approved",
+        form: [
+          { name: "method", label: "Method", type: "select", options: ["cash", "bank_transfer"], required: true },
+          { name: "reference", label: "Reference (UTR / cheque no.)" },
+        ],
+        confirm: "Releases the loan amount to the borrower. This cannot be undone from the dashboard.",
+      },
+    ],
   },
   borrowers: {
     title: "All Borrowers",
@@ -192,6 +204,28 @@ export const PAGES = {
       "dueDate:Due Date",
       "status:Status",
     ),
+    // Inline receipt recording (D13): rows carry the collection account ref
+    // backend-side, so a due EMI can be collected without leaving the screen.
+    actions: [
+      {
+        label: "Collect",
+        verb: "collect",
+        when: (r) => r.status !== "Paid",
+        form: [
+          {
+            name: "amount",
+            label: "Amount (₹) — blank collects this EMI's unpaid balance",
+            type: "number",
+            min: 1,
+            step: "0.01",
+          },
+          sel("method", "Channel", ["Cash", "UPI", "Bank Transfer"]),
+          { name: "reference", label: "Reference (UTR / receipt no.)" },
+        ],
+        confirm:
+          "Records a receipt against this loan's collection account. This records money already received — it does not charge the borrower.",
+      },
+    ],
   },
   "emi/upcoming": {
     title: "Upcoming EMI",
@@ -206,6 +240,26 @@ export const PAGES = {
       "dueDate:Due Date",
       "status:Status",
     ),
+    actions: [
+      {
+        label: "Collect",
+        verb: "collect",
+        when: (r) => r.status !== "Paid",
+        form: [
+          {
+            name: "amount",
+            label: "Amount (₹) — blank collects this EMI's unpaid balance",
+            type: "number",
+            min: 1,
+            step: "0.01",
+          },
+          sel("method", "Channel", ["Cash", "UPI", "Bank Transfer"]),
+          { name: "reference", label: "Reference (UTR / receipt no.)" },
+        ],
+        confirm:
+          "Records a receipt against this loan's collection account. This records money already received — it does not charge the borrower.",
+      },
+    ],
   },
   collections: {
     title: "Collection Overview",
@@ -393,6 +447,13 @@ export const PAGES = {
       ["Avg DPD", plain(Math.round(sumBy(d, "dpd") / (d.all || 1)))],
       ["Highest Bucket", modeOf(d, "bucket")],
     ],
+    // Mirror the pause/resume/close verbs from the collection overview (D14):
+    // the same account-status PATCH route serves both lists.
+    actions: [
+      set("Pause collection", "Paused", (r) => r.status === "Active", true, "Sets the collection account to Paused on the backend."),
+      set("Resume collection", "Active", (r) => r.status === "Paused", false, "Sets the collection account back to Active on the backend."),
+      set("Close account", "Closed", (r) => r.status !== "Closed", true, "Closes the collection account. This cannot be undone from the dashboard."),
+    ],
   },
   "overdue/aging": {
     title: "Aging & Delinquency",
@@ -431,6 +492,11 @@ export const PAGES = {
       ["Active", plain(countBy(d, "Active"))],
       ["Suspended", plain(countBy(d, "Suspended"))],
       ["Never Signed In", plain(countWhere(d, (r) => !r.lastLogin))],
+    ],
+    // Suspend/activate reuse the identity user status route (D14).
+    actions: [
+      { label: "Suspend", setStatus: "Suspended", when: (r) => r.status !== "Suspended" },
+      { label: "Activate", setStatus: "Active", when: (r) => r.status === "Suspended" },
     ],
     create: {
       label: "Add Agent",
@@ -543,7 +609,8 @@ export const PAGES = {
   },
   "reports/reconciliation": {
     title: "Reconciliation",
-    subtitle: "Settlement import and match runs recorded by the backend.",
+    subtitle:
+      "One run ingests a provider settlement file and matches it to payments. Ingest fetches a provider day (rate-limited); Match re-runs matching on already-stored rows.",
     resource: "c_recon",
     tabField: "status",
     filters: ["lender"],
@@ -556,6 +623,40 @@ export const PAGES = {
       "unmatched:Unmatched",
       "status:Status",
     ),
+    // Same shape as the merchant portal's settlements/reconciliation (D12): the
+    // ingest is the ordinary create against POST /reports/ingest, and Re-run
+    // match posts the stored-rows match verb without a provider call.
+    create: {
+      label: "Ingest provider file",
+      form: [
+        {
+          name: "date",
+          label: "Provider settlement date",
+          required: true,
+          type: "date",
+          pattern: /^\d{4}-\d{2}-\d{2}$/,
+          message: "Enter the date as YYYY-MM-DD",
+        },
+      ],
+    },
+    actions: [
+      {
+        label: "Re-run match",
+        verb: "match",
+        form: [
+          {
+            name: "date",
+            label: "Provider settlement date",
+            required: true,
+            type: "date",
+            pattern: /^\d{4}-\d{2}-\d{2}$/,
+            message: "Enter the date as YYYY-MM-DD",
+          },
+        ],
+        confirm:
+          "Re-runs matching on stored rows for this date without calling the provider (no rate limit).",
+      },
+    ],
   },
   support: {
     title: "Disputes & Complaints",
@@ -575,6 +676,9 @@ export const PAGES = {
     actions: [
       set("Resolve ticket", "Resolved", (r) => r.status !== "Resolved"),
     ],
+    // Adds the Thread/Reply drawer; the message routes were already wired but
+    // the flag was only set on the merchant portal's support page (D11).
+    thread: true,
   },
   notifications: {
     title: "Notifications",
@@ -610,5 +714,11 @@ export const PAGES = {
       "status:Status",
     ),
     create: settingsCreate("collection"),
+    edit: { label: "Edit setting", skip: ["key"] },
+    delete: {
+      label: "Delete setting",
+      confirm:
+        "Deletes this collection-scoped setting from the backend. Apps that read the key fall back to their default.",
+    },
   },
 };

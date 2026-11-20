@@ -81,7 +81,7 @@ export default function AppFeatureFlags({ data }) {
         <h1 className="text-2xl font-bold">Merchant App Switches</h1>
         <p className="text-sm text-slate-600">
           Feature flags the SmartHubPay merchant app reads from
-          GET /api/merchant-app/v1/feature-flags. A signed-in merchant picks a
+          A signed-in merchant picks a
           change up on their next sign-in or cold start; no store release is
           needed. Where a build refuses to honour a switch, that flag says so
           below.

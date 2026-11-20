@@ -2,11 +2,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { ChevronDown, LayoutDashboard, Store, Users, QrCode, ArrowLeftRight, Landmark, FileText, LifeBuoy, Bell, Settings, Headphones, X, HandCoins, CalendarClock, Wallet, AlertTriangle, UserCog, BarChart3, Banknote, Building2Icon, FileSearch, Megaphone, ShieldCheck, ClipboardCheck } from 'lucide-react';
+import { ChevronDown, LayoutDashboard, Store, Users, QrCode, ArrowLeftRight, Landmark, FileText, LifeBuoy, Bell, Settings, X, HandCoins, CalendarClock, Wallet, AlertTriangle, UserCog, BarChart3, Banknote, Building2Icon, FileSearch, Megaphone, ShieldCheck, ClipboardCheck, UserCheck, Undo2 } from 'lucide-react';
 import { cx } from '@/components/ui';
 import Image from 'next/image';
 
-const ICONS = { LayoutDashboard, Store, Users, QrCode, ArrowLeftRight, Landmark, FileText, LifeBuoy, Bell, Settings, HandCoins, CalendarClock, Wallet, AlertTriangle, UserCog, BarChart3, Banknote, Building2Icon, FileSearch, Megaphone, ShieldCheck, ClipboardCheck };
+const ICONS = { LayoutDashboard, Store, Users, QrCode, ArrowLeftRight, Landmark, FileText, LifeBuoy, Bell, Settings, HandCoins, CalendarClock, Wallet, AlertTriangle, UserCog, BarChart3, Banknote, Building2Icon, FileSearch, Megaphone, ShieldCheck, ClipboardCheck, UserCheck, Undo2 };
 
 export default function Sidebar({ base, brand, nav, open, onClose }) {
   const path = usePathname();
@@ -52,7 +52,6 @@ export default function Sidebar({ base, brand, nav, open, onClose }) {
             );
           })}
         </nav>
-        <div className="m-3 rounded-xl bg-navy-700 p-3 text-sm"><div className="flex items-center gap-2 font-semibold text-white"><Headphones size={16} aria-hidden />Need Help?</div><p className="mt-1 text-xs text-slate-300">Our support team is always here.</p><Link href={`${base}/support`} className="mt-2 block rounded-lg border border-slate-500 py-1.5 text-center text-xs font-semibold text-white hover:bg-navy">Contact Support</Link></div>
       </aside>
     </>
   );

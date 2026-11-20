@@ -1,4 +1,6 @@
 export const base = '/super-admin';
+// Where the top-bar search submits to (D7).
+export const searchTarget = '/super-admin/merchants';
 
 export const brand = {
   title: 'SMARTHUB PAY',
@@ -16,6 +18,10 @@ export const nav = [
   { label: 'Dashboard', href: b('/dashboard'), icon: 'LayoutDashboard' },
   { label: 'Branches', href: b('/branches'), icon: 'Building2Icon' },
   { label: 'Users', href: b('/users'), icon: 'UserCog' },
+  { label: 'Mandate Agents', href: b('/mandate-agents'), icon: 'BarChart3' },
+{ label: 'Mandate Refunds', href: b('/mandate-refunds'), icon: 'Undo2' },
+  { label: 'Agent Applications', href: b('/agent-applications'), icon: 'ClipboardCheck' },
+  { label: 'Manager Applications', href: b('/manager-applications'), icon: 'UserCheck' },
   { label: 'Audit Logs', href: b('/audit-logs'), icon: 'FileSearch' },
   { label: 'Security & MFA', href: '/account/security', icon: 'ShieldCheck' },
   { label: 'Merchants', href: b('/merchants'), icon: 'Store' },

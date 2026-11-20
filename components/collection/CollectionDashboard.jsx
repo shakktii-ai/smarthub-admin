@@ -337,8 +337,8 @@ export default function CollectionDashboard() {
                   <p className="mt-1 text-lg font-extrabold tabular-nums text-slate-900">{num((autoPay.plans || []).filter((p) => /upi/i.test(p.rail || '')).length)}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">NACH / e-NACH</p>
-                  <p className="mt-1 text-lg font-extrabold tabular-nums text-slate-900">{num((autoPay.plans || []).filter((p) => /nach/i.test(p.rail || '')).length)}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Pending Debits</p>
+                  <p className="mt-1 text-lg font-extrabold tabular-nums text-slate-900">{num(Array.isArray(autoPay.pendingDebits) ? autoPay.pendingDebits.length : 0)}</p>
                 </div>
               </div>
               <ul className="space-y-2">

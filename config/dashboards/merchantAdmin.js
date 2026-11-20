@@ -1,5 +1,7 @@
 // Menu config per dashboard. A future Super Admin dashboard only needs its own array like this.
 export const base = '/merchant-admin';
+// Where the top-bar search submits to (D7).
+export const searchTarget = '/merchant-admin/transactions';
 export const brand = { title: 'SMARTHUB PAY', subtitle: 'Merchant Admin' };
 export const user = { name: 'Amit Sharma', role: 'Merchant Admin' };
 

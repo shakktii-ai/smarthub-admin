@@ -139,6 +139,7 @@ function Donut({ data, total, label }) {
 }
 
 export default function DashboardView({ data: seed = null, feeds: seedFeeds = null }) {
+  const router = useRouter();
   const [d, setD] = useState(seed);
   const [feeds, setFeeds] = useState(seedFeeds);
   const [err, setErr] = useState(false);
@@ -292,6 +293,19 @@ export default function DashboardView({ data: seed = null, feeds: seedFeeds = nu
           </Panel>
         </div>
 
+        {/* Device fleet health (D15): getDashboard already aggregates device counts by status. */}
+        {Array.isArray(d.devices) && d.devices.length > 0 && (
+          <Panel title="Device Fleet" subtitle="Paired devices by status" delay={300}>
+            <ul className="space-y-2">
+              {d.devices.map((x, i) => (
+                <li key={x.name} className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-slate-700">{x.name}</span>
+                  <b className="tabular-nums text-slate-900">{num(x.value)}</b>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        )}
         {/* Feeds */}
         <div className="grid gap-4 xl:grid-cols-2">
           <Panel title="Recent Merchant Onboardings" delay={300} action={<ViewAll href="/merchant-admin/merchants/onboarding" />}>

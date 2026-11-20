@@ -13,6 +13,7 @@ const initialForm = {
 };
 
 export default function BranchesClient({ branches }) {
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [territoryName, setTerritoryName] = useState('');
   const [territoryState, setTerritoryState] = useState('Maharashtra');
@@ -102,6 +103,7 @@ export default function BranchesClient({ branches }) {
         setTerritories([]);
         setTerritoryName('');
         setTerritoryState('Maharashtra');
+        setOpen(false);
         router.refresh();
       }
     });
@@ -109,190 +111,207 @@ export default function BranchesClient({ branches }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Branch Management
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Create branches and their territories together.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Branch Management
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Create branches and their territories together.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen((previous) => !previous)}
+          aria-expanded={open}
+          aria-controls="add-branch-form"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          {open ? 'Cancel' : '+ Add Branch'}
+        </button>
       </div>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
-          Add New Branch
-        </h2>
+      {message && (
+        <p
+          role="status"
+          className={`text-sm ${
+            success ? 'text-green-700' : 'text-red-600'
+          }`}
+        >
+          {message}
+        </p>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">
-                Branch Name *
-              </label>
-              <input
-                id="name"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="e.g. Pune"
-                required
-                maxLength={100}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
-            </div>
+      {open && (
+        <section
+          id="add-branch-form"
+          className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+        >
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            Add New Branch
+          </h2>
 
-            <div>
-              <label htmlFor="code" className="mb-1 block text-sm font-medium text-gray-700">
-                Branch Code *
-              </label>
-              <input
-                id="code"
-                name="code"
-                value={form.code}
-                onChange={handleChange}
-                placeholder="e.g. PUN"
-                required
-                maxLength={12}
-                pattern="[A-Za-z0-9-]{2,12}"
-                title="Use 2–12 letters, numbers or hyphens."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="city" className="mb-1 block text-sm font-medium text-gray-700">
-                City *
-              </label>
-              <input
-                id="city"
-                name="city"
-                value={form.city}
-                onChange={handleChange}
-                placeholder="e.g. Pune"
-                required
-                maxLength={100}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="address" className="mb-1 block text-sm font-medium text-gray-700">
-                Address (Optional)
-              </label>
-              <input
-                id="address"
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                placeholder="Branch address"
-                maxLength={500}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-gray-200 pt-5">
-            <h3 className="text-base font-semibold text-gray-900">
-              Branch Territories
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Add the areas covered by this branch.
-            </p>
-
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="territoryName" className="mb-1 block text-sm font-medium text-gray-700">
-                  Territory Name
+                <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">
+                  Branch Name *
                 </label>
                 <input
-                  id="territoryName"
-                  value={territoryName}
-                  onChange={(event) => setTerritoryName(event.target.value)}
-                  placeholder="e.g. Hadapsar"
+                  id="name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="e.g. Pune"
+                  required
                   maxLength={100}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
 
               <div>
-                <label htmlFor="territoryState" className="mb-1 block text-sm font-medium text-gray-700">
-                  State
+                <label htmlFor="code" className="mb-1 block text-sm font-medium text-gray-700">
+                  Branch Code *
                 </label>
                 <input
-                  id="territoryState"
-                  value={territoryState}
-                  onChange={(event) => setTerritoryState(event.target.value)}
-                  placeholder="Maharashtra"
+                  id="code"
+                  name="code"
+                  value={form.code}
+                  onChange={handleChange}
+                  placeholder="e.g. PUN"
+                  required
+                  maxLength={12}
+                  pattern="[A-Za-z0-9-]{2,12}"
+                  title="Use 2–12 letters, numbers or hyphens."
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="city" className="mb-1 block text-sm font-medium text-gray-700">
+                  City *
+                </label>
+                <input
+                  id="city"
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  placeholder="e.g. Pune"
+                  required
                   maxLength={100}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
 
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={addTerritory}
-                  className="w-full rounded-lg border border-blue-600 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 sm:w-auto"
-                >
-                  + Add Territory
-                </button>
+              <div>
+                <label htmlFor="address" className="mb-1 block text-sm font-medium text-gray-700">
+                  Address (Optional)
+                </label>
+                <input
+                  id="address"
+                  name="address"
+                  value={form.address}
+                  onChange={handleChange}
+                  placeholder="Branch address"
+                  maxLength={500}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                />
               </div>
             </div>
 
-            {territories.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {territories.map((territory, index) => (
-                  <div
-                    key={`${territory.name}-${index}`}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+            <div className="border-t border-gray-200 pt-5">
+              <h3 className="text-base font-semibold text-gray-900">
+                Branch Territories
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Add the areas covered by this branch.
+              </p>
+
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                <div>
+                  <label htmlFor="territoryName" className="mb-1 block text-sm font-medium text-gray-700">
+                    Territory Name
+                  </label>
+                  <input
+                    id="territoryName"
+                    value={territoryName}
+                    onChange={(event) => setTerritoryName(event.target.value)}
+                    placeholder="e.g. Hadapsar"
+                    maxLength={100}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="territoryState" className="mb-1 block text-sm font-medium text-gray-700">
+                    State
+                  </label>
+                  <input
+                    id="territoryState"
+                    value={territoryState}
+                    onChange={(event) => setTerritoryState(event.target.value)}
+                    placeholder="Maharashtra"
+                    maxLength={100}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={addTerritory}
+                    className="w-full rounded-lg border border-blue-600 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 sm:w-auto"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {territory.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {territory.state || 'State not specified'}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => removeTerritory(index)}
-                      aria-label={`Remove ${territory.name}`}
-                      className="rounded-md px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                    + Add Territory
+                  </button>
+                </div>
               </div>
-            )}
 
-            <p className="mt-2 text-xs text-gray-500">
-              {territories.length} territories added
-            </p>
-          </div>
+              {territories.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {territories.map((territory, index) => (
+                    <div
+                      key={`${territory.name}-${index}`}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {territory.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {territory.state || 'State not specified'}
+                        </p>
+                      </div>
 
-          {message && (
-            <p
-              role="status"
-              className={`text-sm ${
-                success ? 'text-green-700' : 'text-red-600'
-              }`}
+                      <button
+                        type="button"
+                        onClick={() => removeTerritory(index)}
+                        aria-label={`Remove ${territory.name}`}
+                        className="rounded-md px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="mt-2 text-xs text-gray-500">
+                {territories.length} territories added
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isPending}
+              className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {message}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isPending ? 'Creating...' : 'Create Branch'}
-          </button>
-        </form>
-      </section>
+              {isPending ? 'Creating...' : 'Create Branch'}
+            </button>
+          </form>
+        </section>
+      )}
 
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 px-5 py-4">

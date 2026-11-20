@@ -12,6 +12,7 @@ const B = '/merchant-admin/merchants/onboarding';
 const COLORS = { Approved: '#1E9E6A', 'Under Review': '#FF9F1C', Submitted: '#F5C84C', Rejected: '#D64545', Draft: '#94A3B8' };
 
 export default function OnboardingOverview() {
+  const router = useRouter();
   const [d, setD] = useState(null); const [err, setErr] = useState(false);
   const load = () => { setErr(false); getOnboardingOverview().then(setD).catch(() => setErr(true)); };
   useEffect(() => { load(); }, []);

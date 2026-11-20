@@ -8,15 +8,27 @@ const stamped = (value) => {
   return moment ? dateParts(moment).dateTime : "";
 };
 
-// /api/merchant-app/v1/content serves an item only while it is published and inside its
-// schedule window, so a Published row can still be invisible to the app. Name the reason.
+// A published row can still be invisible to the apps (draft, not published yet, or past
+// its schedule window). `serving` is a stable token so the dashboard can colour it;
+// the human sentence stays in `servingDetail`, which the table omits but the drawer shows.
 const contentServing = (c) => {
   if (c.status !== "published") return labelize(c.status);
   const now = new Date();
   const from = utcDate(c.starts_at);
   const until = utcDate(c.ends_at);
+  if (from && from > now) return "Scheduled";
+  if (until && until < now) return "Expired";
+  return "Live now";
+};
+
+const contentServingDetail = (c) => {
+  const now = new Date();
+  const from = utcDate(c.starts_at);
+  const until = utcDate(c.ends_at);
+  if (c.status !== "published") return labelize(c.status);
   if (from && from > now) return `Live from ${stamped(c.starts_at)}`;
   if (until && until < now) return `Expired ${stamped(c.ends_at)}`;
+  if (until) return `Live now, until ${stamped(c.ends_at)}`;
   return "Live now";
 };
 
@@ -663,6 +675,7 @@ export const RESOURCES = {
       endsOn: dateParts(c.ends_at).date,
       status: labelize(c.status),
       serving: contentServing(c),
+      servingDetail: contentServingDetail(c),
       publishedOn: dateParts(c.published_at).dateTime,
       iso: dateParts(c.created_at).iso,
       raw: c,
@@ -752,7 +765,9 @@ export const RESOURCES = {
         })),
         collectionRequest: l.application_details.collection ? "Requested — not authorized" : "Set up later",
         ...(l.application_details.collection ? {
-          collectionRail: l.application_details.collection.rail === "upi" ? "UPI AutoPay" : "NACH / e-NACH",
+          // The backend refuses rail=nach mandates (422 loan_autopay_rail_unsupported);
+          // only UPI AutoPay is supported, so the label never advertises NACH as live.
+          collectionRail: l.application_details.collection.rail === "upi" ? "UPI AutoPay" : "Not supported yet — UPI AutoPay only",
           collectionAmountType: labelize(l.application_details.collection.amount_type),
           collectionAmount: `₹${rupees(l.application_details.collection.amount_paise).toLocaleString("en-IN")}`,
           collectionFrequency: "Monthly",
@@ -1046,6 +1061,10 @@ export const RESOURCES = {
       paidOn: dateParts(i.paid_at).date,
       status: labelize(i.status),
       iso: dateParts(i.due_date).iso,
+      // The collection account behind the loan, so the dashboard's EMI Due
+      // Today card can offer Collect directly (D10). Empty when the loan has
+      // no account yet, which keeps the "Open account" fallback honest.
+      account: i.account_ref || "",
       raw: i,
     }),
   },

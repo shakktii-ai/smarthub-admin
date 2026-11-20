@@ -159,7 +159,7 @@ export const PAGES = {
   "app-content": {
     title: "App Content",
     subtitle:
-      "Banners, notices, FAQs and help articles served to the merchant app through /api/merchant-app/v1/content.",
+      "Banners, notices, FAQs and help articles. Audience decides which app serves an item (Merchant / Collection / All); only published, in-window items reach the app — an expired one shows as Expired below.",
     resource: "appContent",
     tabField: "kind",
     filters: ["status", "audience", "placement"],
@@ -180,9 +180,9 @@ export const PAGES = {
     ),
     statsFor: (d) => [
       ["Items", plain(d.all)],
+      ["Live now", plain(countWhere(d, (r) => r.serving === "Live now"))],
+      ["Expired", plain(countWhere(d, (r) => r.serving === "Expired"))],
       ["Banners", plain(countBy(d, "Banner"))],
-      ["FAQs", plain(countBy(d, "FAQ"))],
-      ["Published", plain(countBy(d, "Published"))],
     ],
     // The create form doubles as the edit form: the same boxes, filled from the row's own backend
     // values by the seam. `skip` keeps Status out of the edit copy because publish and archive are

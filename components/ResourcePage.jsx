@@ -68,7 +68,7 @@ const label = (k) =>
 const cell = (col, row) =>
   col.type === "money" ? (
     inr(row[col.key])
-  ) : ["status", "priority", "bankStatus", "risk", "riskBand", "kycStatus"].includes(
+  ) : ["status", "priority", "bankStatus", "risk", "riskBand", "kycStatus", "serving"].includes(
       col.key,
     ) ? (
     <Badge value={row[col.key]} />
@@ -351,8 +351,6 @@ export default function ResourcePage({ dashboard, pageKey }) {
         </div>
       )}
 
-      {/* {chart.length > 0 && <DonutCard title={`${label(config.tabField)} breakdown`} data={chart} ariaLabel={`Donut chart of ${config.title} by ${config.tabField}`} />} */}
-
       <Card delay={220}>
         <FilterBar
           search={q}
@@ -460,7 +458,7 @@ export default function ResourcePage({ dashboard, pageKey }) {
                   <dd className="text-right font-medium">
                     {["amount", "volume", "gmv"].includes(k) ? (
                       inr(v)
-                    ) : k === "status" ? (
+                    ) : ["status", "serving"].includes(k) ? (
                       <Badge value={v} />
                     ) : v !== null && typeof v === "object" ? (
                       JSON.stringify(v)

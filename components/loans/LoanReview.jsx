@@ -356,7 +356,7 @@ export default function LoanReview({ loanRef, backHref = '/collection-admin/loan
                 <Row k="Mode" v={autopay.mode} />
                 <Row k="Frequency" v={autopay.frequency} />
                 <Row k="Amount" v={autopay.amount_paise != null ? inr(autopay.amount_paise / 100) : null} />
-                <p className="mt-2 text-xs text-slate-500">Mandates are created after approval through an explicit admin action. Refresh to sync provider status.</p>
+                <p className="mt-2 text-xs text-slate-500">AutoPay is set up after approval — here or through the collect app. Refresh to sync provider status.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button variant="outline" disabled={autopayBusy} onClick={async () => { setAutopayBusy(true); try { await api.post(`/api/loans/v1/loans/${encodeURIComponent(loanRef)}/autopay/refresh`); loadAutopay(); } catch (e) { toast(e.message || 'Refresh failed.', 'error'); } finally { setAutopayBusy(false); } }}>
                     {autopayBusy ? <Loader2 size={14} className="animate-spin" aria-hidden /> : null} Refresh

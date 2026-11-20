@@ -1,4 +1,7 @@
 export const base = '/collection-admin';
+// Where the top-bar search submits to (D7). The term travels through AppContext
+// and filters whatever list that page shows.
+export const searchTarget = '/collection-admin/payments';
 export const brand = { title: 'SMARTHUB PAY', subtitle: 'Lending & Collection' };
 export const user = { name: 'Amit Sharma', role: 'Collection Admin' };
 const b = (p) => `${base}${p}`;
@@ -14,6 +17,7 @@ export const nav = [
   { label: 'Reports & Reconciliation', icon: 'BarChart3', children: [{ label: 'Collection Reports', href: b('/reports/collection') }, { label: 'Loan Reports', href: b('/reports/loans') }, { label: 'Reconciliation', href: b('/reports/reconciliation') }] },
   { label: 'Support & Disputes', icon: 'LifeBuoy', children: [{ label: 'Disputes & Complaints', href: b('/support') }] },
   { label: 'Notifications', href: b('/notifications'), icon: 'Bell' },
+  { label: 'Token Plans', icon: 'Wallet', children: [{ label: 'Manage Plans', href: b('/tokens') }] },
   { label: 'Settings', href: b('/settings'), icon: 'Settings' },
   { label: 'Security & MFA', href: '/account/security', icon: 'ShieldCheck' },
 ];

@@ -22,7 +22,7 @@ export default async function AccountLayout({ children }) {
   const me = p ? { name: p.full_name || p.email, role: ROLE_LABELS[p.role] } : shell.user;
 
   return (
-    <AdminLayout base={shell.base} brand={shell.brand} nav={shell.nav} user={me}>
+    <AdminLayout base={shell.base} brand={shell.brand} nav={shell.nav} user={me} searchTarget={shell.searchTarget}>
       {children}
     </AdminLayout>
   );

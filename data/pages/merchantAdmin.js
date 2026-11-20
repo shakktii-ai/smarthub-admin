@@ -73,6 +73,12 @@ export const PAGES = {
       ["Inactive / Suspended", plain(countBy(d, "Suspended", "Rejected"))],
       ["New this month", plain(countWhere(d, (r) => r.iso >= monthStart()))],
     ],
+    // Suspend/Activate from the list (D15): ACTIONS.merchants already posts the
+    // backend transition routes; the config just had to declare them.
+    actions: [
+      { label: "Suspend", setStatus: "Suspended", when: (r) => r.status !== "Suspended" && r.status !== "Rejected" },
+      { label: "Activate", setStatus: "Active", when: (r) => r.status === "Suspended" },
+    ],
     create: {
       label: "Add Merchant",
       form: [
@@ -273,6 +279,7 @@ export const PAGES = {
     ],
     // A device enters stock first; assigning, activating and retiring it are separate transition
     // routes on the numeric device id.
+    edit: true,
     create: {
       label: "Add Device",
       form: [
@@ -417,6 +424,10 @@ export const PAGES = {
       { key: "rrn", label: "RRN" },
       { key: "status", label: "Status" },
       { key: "responseDescription", label: "Response" },
+    ],
+    actions: [
+      { label: "Retry", verb: "retry", when: (r) => r.status !== "Completed" && r.status !== "Success" },
+      { label: "Approve", verb: "decision", form: [{ name: "approve", label: "Decision", type: "select", options: ["Approve", "Reject"], required: true }, { name: "note", label: "Note" }], when: (r) => r.status !== "Approved" && r.status !== "Completed" && r.status !== "Rejected" },
     ],
   },
   settlements: {
@@ -600,6 +611,7 @@ export const PAGES = {
       { key: "status", label: "Status" },
     ],
     download: true,
+    delete: { label: "Delete report", buttonLabel: "Delete", confirm: "Removes this generated report file from the server." },
     create: {
       label: "Generate Report",
       form: [
@@ -813,19 +825,49 @@ export const PAGES = {
       { key: "status", label: "Status" },
     ],
     statsFor: (d) => [
+      // Labels must match what labelize() produces from SupportTicketStatus
+      // (app/common/enums.py:768): open→"Open", in_progress→"In Progress",
+      // waiting_on_customer→"Waiting On Customer". "Waiting Merchant" and
+      // "New" were hand-written drift — the tile silently undercounted.
       ["Tickets", plain(d.all)],
-      ["Open", plain(countBy(d, "Open", "New"))],
-      ["In Progress", plain(countBy(d, "In Progress", "Pending", "Waiting Merchant"))],
+      ["Open", plain(countBy(d, "Open"))],
+      ["In Progress", plain(countBy(d, "In Progress", "Waiting On Customer"))],
       ["Resolved", plain(countBy(d, "Resolved", "Closed"))],
     ],
     actions: [
+      {
+        label: "In Progress",
+        setStatus: "In Progress",
+        when: (r) => r.status !== "In Progress" && r.status !== "Resolved" && r.status !== "Closed",
+      },
+      {
+        label: "Waiting On Customer",
+        setStatus: "Waiting On Customer",
+        when: (r) => r.status !== "Waiting On Customer" && r.status !== "Resolved" && r.status !== "Closed",
+      },
       {
         label: "Resolve ticket",
         confirm: "Marks the ticket Resolved on the support API.",
         setStatus: "Resolved",
         when: (r) => r.status !== "Resolved" && r.status !== "Closed",
       },
+      {
+        label: "Close",
+        setStatus: "Closed",
+        danger: true,
+        when: (r) => r.status !== "Closed",
+      },
     ],
+    create: {
+      label: "Create ticket",
+      form: [
+        { name: "merchant", label: "Merchant code", placeholder: "MRC-000001" },
+        { name: "subject", label: "Subject", required: true },
+        { name: "category", label: "Category", required: true },
+        { name: "priority", label: "Priority", type: "select", options: ["Low", "Medium", "High", "Urgent"], required: true },
+        { name: "description", label: "Description", required: true },
+      ],
+    },
     // Adds a "Thread" button that opens the message thread (GET/POST /tickets/{ref}/messages).
     thread: true,
   },
